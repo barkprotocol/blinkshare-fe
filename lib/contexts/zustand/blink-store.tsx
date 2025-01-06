@@ -53,7 +53,7 @@ export const useBlinkStore = create<BlinkStore>((set) => ({
       },
     })),
   updateFieldLabel: (index, label) =>
-    set((state) => {
+    set((state: { formData: { fields: any; }; }) => {
       const newFields = [...state.formData.fields];
       newFields[index] = label;
       return {

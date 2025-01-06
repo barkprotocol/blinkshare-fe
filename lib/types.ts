@@ -169,7 +169,7 @@ declare type PatchGuild = (
 
 type RoleData = { blinkordRolePosition: number; roles: DiscordRole[] };
 
-declare interface ServerFormProps {
+export export declare interface ServerFormProps {
   formData: ServerFormData;
   setFormData: React.Dispatch<React.SetStateAction<ServerFormData>>;
   roleData: RoleData;

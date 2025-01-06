@@ -1,7 +1,7 @@
 import { Connection, PublicKey, clusterApiUrl, Transaction, SystemProgram, Keypair } from '@solana/web3.js';
 import { Telegraf } from 'telegraf'; 
 import { createMint, createAssociatedTokenAccount, mintTo } from '@solana/spl-token';
-import { Metaplex, keypairIdentity, bundlrStorage } from '@metaplex-foundation/js'; // For NFT minting
+import { Metaplex, keypairIdentity, bundlrStorage } from '@metaplex-foundation/umi';
 import * as fs from 'fs';
 import dotenv from 'dotenv';
 
@@ -15,7 +15,7 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_API_KEY);
 const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 
 // Placeholder: Replace with your wallet's keypair (preferably stored securely, not hardcoded)
-const adminKeypair = Keypair.generate();
+const adminKeypair = Keypair.generate();  // Use a securely stored keypair here, not generated each time
 
 // Initialize Metaplex for NFT minting
 const metaplex = Metaplex.make(connection)
@@ -67,12 +67,16 @@ bot.command('donate', async (ctx) => {
           lamports: 0, // No SOL transferred for memo
         })
       );
-      // Use memo for the transaction
-      transaction.add(new Transaction().memo(memo));
+      // Add memo to the transaction
+      transaction.add(
+        SystemProgram.memo({
+          data: memo, // Memo content
+        })
+      );
     }
 
-    // Sign the transaction (you will need a private key or signer here)
-    const signature = await connection.sendTransaction(transaction, [/* Signers here */]);
+    // Sign the transaction using the sender's keypair (signer)
+    const signature = await connection.sendTransaction(transaction, [adminKeypair]); // Replace with actual signer
     await connection.confirmTransaction(signature);
 
     ctx.reply(`Donation successful! Transaction signature: ${signature}`);
@@ -159,12 +163,16 @@ bot.command('pay', async (ctx) => {
           lamports: 0, // No SOL transferred for memo
         })
       );
-      // Use memo for the transaction
-      transaction.add(new Transaction().memo(memo));
+      // Add memo to the transaction
+      transaction.add(
+        SystemProgram.memo({
+          data: memo, // Memo content
+        })
+      );
     }
 
-    // Sign the transaction (you will need a private key or signer here)
-    const signature = await connection.sendTransaction(transaction, [/* Signers here */]);
+    // Sign the transaction using the sender's keypair (signer)
+    const signature = await connection.sendTransaction(transaction, [adminKeypair]); // Replace with actual signer
     await connection.confirmTransaction(signature);
 
     ctx.reply(`Payment successful! Transaction signature: ${signature}`);

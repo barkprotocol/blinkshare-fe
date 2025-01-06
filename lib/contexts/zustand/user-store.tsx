@@ -26,15 +26,15 @@ interface UserState {
 // Zustand store creation
 export const useUserStore = create(
   persist<UserState>(
-    (set, get) => ({
+    (set: (arg0: { token?: any; userData?: any; discordConnected?: any; discordDisconnected?: any; }) => any, get: any) => ({
       token: null,
       userData: null,
       discordConnected: false,
       discordDisconnected: false,
-      setToken: (token) => set({ token }),
-      setUserData: (data) => set({ userData: data }),
-      setDiscordConnected: (connected) => set({ discordConnected: connected }),
-      setDiscordDisconnected: (disconnected) =>
+      setToken: (token: any) => set({ token }),
+      setUserData: (data: any) => set({ userData: data }),
+      setDiscordConnected: (connected: any) => set({ discordConnected: connected }),
+      setDiscordDisconnected: (disconnected: any) =>
         set({ discordDisconnected: disconnected }),
       reset: () =>
         set({
@@ -48,7 +48,7 @@ export const useUserStore = create(
     {
       name: "user-storage",
       // Add a `onRehydrateStorage` to set `isLoggedIn` after hydration
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state: { token: any; isLoggedIn: boolean; }) => {
         if (state.token) {
           state.isLoggedIn = true;
         }
