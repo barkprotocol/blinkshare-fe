@@ -1,50 +1,74 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { jwtDecode } from 'jwt-decode';
 
-interface UserStore {
-  token: string | null;
-  isUserLoggedIn: () => boolean;
-  setToken: (token: string) => void;
-  clearUserData: () => void;
-  checkTokenExpiry: () => void;
+interface BlinkFormData {
+  title: string;
+  description: string;
+  fields: string[];
+  iconUrl: string;
+  stylePreset: string;
+  serverId: string;
+  code: string;
 }
 
-interface DecodedToken {
-  exp: number;
-  [key: string]: any;
+interface BlinkStore {
+  formData: BlinkFormData;
+  setFormData: (key: keyof BlinkFormData, value: string | string[]) => void;
+  addField: () => void;
+  removeField: (index: number) => void;
+  updateFieldLabel: (index: number, label: string) => void;
+  validateForm: () => boolean;
 }
 
-export const useUserStore = create<UserStore>(
-  persist(
-    (set, get) => ({
-      token: null,
-      isUserLoggedIn: () => !!get().token,
-      setToken: (token) => set({ token }),
-      clearUserData: () => set({ token: null }),
-      checkTokenExpiry: () => {
-        const token = get().token;
-        if (token) {
-          try {
-            const decoded: DecodedToken = jwtDecode(token);
-            const expiry = decoded.exp * 1000; // Convert expiry time to milliseconds
-            const now = Date.now();
-            
-            if (now > expiry) {
-              console.log("Token has expired.");
-              set({ token: null });
-            } else {
-              console.log("Token is still valid.");
-            }
-          } catch (error) {
-            console.error("Failed to decode token:", error);
-          }
-        }
-      },
+export const useBlinkStore = create<BlinkStore>((set) => ({
+  formData: {
+    title: '',
+    description: '',
+    fields: ['Field 1'],
+    iconUrl: '',
+    stylePreset: 'default',
+    serverId: '',
+    code: '',
+  },
+  setFormData: (key, value) =>
+    set((state) => {
+      // Simple validation for title and description
+      if ((key === 'title' || key === 'description') && !value) {
+        console.error(`${key} cannot be empty`);
+        return state;
+      }
+      return { formData: { ...state.formData, [key]: value } };
     }),
-    {
-      name: 'user-storage', // The key used for localStorage or sessionStorage
-      getStorage: () => localStorage, // Use localStorage
+  addField: () =>
+    set((state) => ({
+      formData: {
+        ...state.formData,
+        fields: [...state.formData.fields, `Field ${state.formData.fields.length + 1}`],
+      },
+    })),
+  removeField: (index) =>
+    set((state) => ({
+      formData: {
+        ...state.formData,
+        fields: state.formData.fields.filter((_, i) => i !== index),
+      },
+    })),
+  updateFieldLabel: (index, label) =>
+    set((state) => {
+      const newFields = [...state.formData.fields];
+      newFields[index] = label;
+      return {
+        formData: {
+          ...state.formData,
+          fields: newFields,
+        },
+      };
+    }),
+  validateForm: () => {
+    const { title, description } = set.getState().formData;
+    if (!title || !description) {
+      console.error('Title and description are required.');
+      return false;
     }
-  )
-);
+    return true;
+  },
+}));
