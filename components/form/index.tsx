@@ -325,7 +325,7 @@ function ServerForm({
                             step="0.00000001"
                             transition={{ type: "spring", stiffness: 300 }}
                           />
-                          <span className="text-gray-600">{formData.useUsdc ? 'USDC' : 'SOL' : 'BARK'&rbrace;</span>
+                          <span className="text-gray-600">{formData.useUsdc ? 'USDC' : formData.limitedTimeRoles ? 'SOL' : 'BARK'}</span>
                         </div>
                       </div>
                       {roleErrors[role.id] && (
