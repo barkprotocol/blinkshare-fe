@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CopyIcon, SquareArrowOutUpRight } from "lucide-react";
 import { useWalletActions } from "@/hooks/use-wallet-actions";
-import { DiscordRole, RoleData } from "@/lib/types";
+import { DiscordRole, RoleData } from "@/lib/types/index";
 import {
   MotionCard,
   MotionCardContent,
