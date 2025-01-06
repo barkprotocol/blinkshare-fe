@@ -1,11 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Add your custom domains for images
+  // Use the new remotePatterns configuration instead of domains
   images: {
-    domains: [
-      "cdn.discordapp.com",
-      "ucarecdn.com",
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.discordapp.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ucarecdn.com',
+      },
     ],
   },
 

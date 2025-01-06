@@ -1,4 +1,4 @@
-import { RoleData, Role, ServerFormProps } from "@/lib/types";
+import { RoleData, Role, ServerFormProps } from "@/lib/types/index";
 import { fetchRoles } from "@/lib/actions/discord-actions";
 import { toast } from "sonner";
 import { Dispatch, SetStateAction } from "react";
@@ -11,7 +11,7 @@ export const handleInputChange = <
   value: ServerFormProps["formData"][T],
   setFormData: Dispatch<SetStateAction<ServerFormProps["formData"]>>
 ) => {
-  setFormData((prev: any) => ({ ...prev, [field]: value }));
+  setFormData((prev) => ({ ...prev, [field]: value }));
 };
 
 // Handle toggling of Discord roles
@@ -23,7 +23,7 @@ export const handleDiscordRoleToggle = (
   setRoleErrors: Dispatch<SetStateAction<{ [key: string]: boolean }>>,
   setErrorMessage: Dispatch<SetStateAction<string>>
 ) => {
-  const role = roleData.roles.find((role: { id: string; }) => role.id === roleId);
+  const role = roleData.roles.find((role) => role.id === roleId);
 
   if (!role) {
     setErrorMessage("Role not found.");
@@ -32,7 +32,7 @@ export const handleDiscordRoleToggle = (
   }
 
   // Ensure the role can only be toggled if it has a lower position than the "blinkShare" role
-  if (roleData.blinkShareRolePosition <= (role.position || 0)) {
+  if (roleData.blinkShareRolePosition <= role.position) {
     setRoleErrors((prev) => ({ ...prev, [roleId]: true }));
     setErrorMessage("You cannot toggle this role due to its position.");
     toast.error("You cannot toggle this role due to its position.");
@@ -42,21 +42,21 @@ export const handleDiscordRoleToggle = (
   setRoleErrors((prev) => ({ ...prev, [roleId]: false }));
   setErrorMessage(""); // Reset error message on success
 
-  const updatedRoles = roleData.roles.map((r: { id: string; enabled: any; }) =>
+  const updatedRoles = roleData.roles.map((r) =>
     r.id === roleId ? { ...r, enabled: !r.enabled } : r
   );
 
   setRoleData({ ...roleData, roles: updatedRoles });
 
   const enabledRoles = updatedRoles
-    .filter((r: { enabled: any; }) => r.enabled)
-    .map((r: { id: any; name: any; price: any; }) => ({
+    .filter((r) => r.enabled)
+    .map((r) => ({
       id: r.id,
       name: r.name,
       amount: r.price,
     }));
 
-  setFormData((prev: any) => ({ ...prev, roles: enabledRoles }));
+  setFormData((prev) => ({ ...prev, roles: enabledRoles }));
 };
 
 // Handle price changes for Discord roles
@@ -69,21 +69,28 @@ export const handleDiscordRolePriceChange = (
   setRoleErrors: Dispatch<SetStateAction<{ [key: string]: boolean }>>,
   setErrorMessage: Dispatch<SetStateAction<string>> // Added error message handling
 ) => {
-  const updatedRoles = roleData.roles.map((role: { id: string; }) =>
+  // Validate price (basic check for positive number, can be enhanced)
+  if (isNaN(Number(price)) || Number(price) <= 0) {
+    setErrorMessage("Invalid price. Please enter a valid number.");
+    toast.error("Invalid price. Please enter a valid number.");
+    return;
+  }
+
+  const updatedRoles = roleData.roles.map((role) =>
     role.id === roleId ? { ...role, price } : role
   );
 
   setRoleData({ ...roleData, roles: updatedRoles });
 
   const enabledRoles = updatedRoles
-    .filter((role: { enabled: any; }) => role.enabled)
-    .map((role: { id: any; name: any; }) => ({
+    .filter((role) => role.enabled)
+    .map((role) => ({
       id: role.id,
       name: role.name,
       amount: price,
     }));
 
-  setFormData((prev: any) => ({ ...prev, roles: enabledRoles }));
+  setFormData((prev) => ({ ...prev, roles: enabledRoles }));
   setErrorMessage(""); // Reset error message on success
 };
 
@@ -103,8 +110,9 @@ export const refreshRoles = async (
     const allRoles = await fetchRoles(formDataId);
 
     // Merge roles to keep custom values like price and enabled state
+    const roleMap = new Map(roleData.roles.map((r) => [r.id, r]));
     const mergedRoles: Role[] = allRoles.roles.map((role) => {
-      const selectedRole = roleData.roles.find((r: { id: any; }) => r.id === role.id);
+      const selectedRole = roleMap.get(role.id);
       return selectedRole
         ? { ...role, price: selectedRole.price, enabled: selectedRole.enabled }
         : role;

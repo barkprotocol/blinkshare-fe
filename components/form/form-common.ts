@@ -3,17 +3,6 @@ import { fetchRoles } from "@/lib/actions/discord-actions";
 import { toast } from "sonner";
 import { Dispatch, SetStateAction } from "react";
 
-// Handling input changes for form data
-export const handleInputChange = <
-  T extends keyof ServerFormProps["formData"]
->(
-  field: T,
-  value: ServerFormProps["formData"][T],
-  setFormData: Dispatch<SetStateAction<ServerFormProps["formData"]>>
-) => {
-  setFormData((prev) => ({ ...prev, [field]: value }));
-};
-
 // Handle toggling of Discord roles
 export const handleDiscordRoleToggle = (
   roleId: string,
@@ -22,12 +11,13 @@ export const handleDiscordRoleToggle = (
   setFormData: Dispatch<SetStateAction<ServerFormProps["formData"]>>,
   setRoleErrors: Dispatch<SetStateAction<Record<string, boolean>>>
 ) => {
-  const role = roleData.roles.find((role) => role.id === roleId);
+  const role = roleData.roles.find((role: { id: string; }) => role.id === roleId);
 
   if (!role) return;
 
   // Ensure the role can only be toggled if it has a lower position than the "blinkShare" role
-  if (roleData.blinkShareRolePosition <= (role.position || 0)) {
+  const rolePosition = role.position ?? -1; // Use -1 or a fallback value if position is undefined
+  if (roleData.blinkShareRolePosition <= rolePosition) {
     setRoleErrors((prev) => ({ ...prev, [roleId]: true }));
     toast.error("This role cannot be toggled as it has a higher position than the 'blinkShare' role.");
     return;
@@ -35,18 +25,19 @@ export const handleDiscordRoleToggle = (
 
   setRoleErrors((prev) => ({ ...prev, [roleId]: false }));
 
-  const updatedRoles = roleData.roles.map((r) =>
+  // Update role enabled state
+  const updatedRoles = roleData.roles.map((r: { id: string; enabled: any; }) =>
     r.id === roleId ? { ...r, enabled: !r.enabled } : r
   );
 
   setRoleData({ ...roleData, roles: updatedRoles });
 
   const enabledRoles = updatedRoles
-    .filter((r) => r.enabled)
-    .map((r) => ({
+    .filter((r: { enabled: any; }) => r.enabled)
+    .map((r: { id: any; name: any; price: any; }) => ({
       id: r.id,
       name: r.name,
-      amount: r.price,
+      amount: r.price ?? "0",
     }));
 
   setFormData((prev) => ({ ...prev, roles: enabledRoles }));
@@ -61,18 +52,18 @@ export const handleDiscordRolePriceChange = (
   setFormData: Dispatch<SetStateAction<ServerFormProps["formData"]>>,
   setRoleErrors: Dispatch<SetStateAction<Record<string, boolean>>>
 ) => {
-  const updatedRoles = roleData.roles.map((role) =>
-    role.id === roleId ? { ...role, price } : role
+  const updatedRoles = roleData.roles.map((role: { id: string; }) =>
+    role.id === roleId ? { ...role, price: price ?? "0" } : role
   );
 
   setRoleData({ ...roleData, roles: updatedRoles });
 
   const enabledRoles = updatedRoles
-    .filter((role) => role.enabled)
-    .map((role) => ({
+    .filter((role: { enabled: any; }) => role.enabled)
+    .map((role: { id: any; name: any; }) => ({
       id: role.id,
       name: role.name,
-      amount: price,
+      amount: price ?? "0", // Default to "0" if price is undefined
     }));
 
   setFormData((prev) => ({ ...prev, roles: enabledRoles }));
@@ -85,36 +76,45 @@ export const refreshRoles = async (
   setRoleData: Dispatch<SetStateAction<RoleData>>,
   setIsRefreshingRoles: Dispatch<SetStateAction<boolean>>,
   setRoleErrors: Dispatch<SetStateAction<Record<string, boolean>>>,
-  setErrorMessage: Dispatch<SetStateAction<string>> // New error message state for better feedback
+  setErrorMessage: Dispatch<SetStateAction<string>>,
+  setLoading: Dispatch<SetStateAction<boolean>> // Optional loading state to indicate fetch progress
 ) => {
   setIsRefreshingRoles(true);
   setErrorMessage(""); // Clear any previous error message
+  setLoading(true); // Set loading state to true before fetching
 
   try {
     const allRoles = await fetchRoles(formDataId);
+    
+    if (!allRoles || !allRoles.roles) {
+      throw new Error("Invalid response from server. Missing 'roles' data.");
+    }
 
     // Merge roles to keep custom values like price and enabled state
     const mergedRoles: Role[] = allRoles.roles.map((role) => {
-      const selectedRole = roleData.roles.find((r) => r.id === role.id);
+      const selectedRole = roleData.roles.find((r: { id: any; }) => r.id === role.id);
       return selectedRole
         ? { ...role, price: selectedRole.price, enabled: selectedRole.enabled }
         : role;
     });
 
     // Ensure the updated role data contains the correct `blinkShareRolePosition`
-    setRoleData({
-      ...roleData, // Keep the existing data
-      roles: mergedRoles,
-      blinkShareRolePosition: roleData.blinkShareRolePosition, // Ensure this property is passed
-    });
+    setRoleData((prev: any) => ({
+      ...prev,
+      roles: mergedRoles, // Ensure we use `Role[]` type for roles
+      blinkShareRolePosition: roleData.blinkShareRolePosition ?? -1, // Provide a fallback for undefined position
+    }));
 
-    setRoleErrors({});
+    setRoleErrors({}); // Reset any role-specific errors
     toast.success("Roles refreshed successfully");
   } catch (error) {
     console.error("Error refreshing roles", error);
-    setErrorMessage("Failed to refresh roles. Please try again.");
-    toast.error("Failed to refresh roles. Please try again.");
+
+    const errorMessage = (error as Error).message ?? "Failed to refresh roles.";
+    setErrorMessage(errorMessage);
+    toast.error(errorMessage);
   } finally {
     setIsRefreshingRoles(false);
+    setLoading(false); // Reset loading state after fetching
   }
 };

@@ -11,7 +11,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
 import { DiscordRole, RoleData } from "@/lib/types/index";
 import { fetchRoles } from "@/lib/actions/discord-actions";
-import { defaultSchema, ServerFormData, serverFormSchema } from "@/lib/zod-validation";
+import { defaultSchema, ServerFormData, serverFormSchema } from "@/lib/zod-validation/server-form-data";
 import { MotionCard, MotionCardContent } from "@/components/motion";
 import ServerForm from "@/components/form";
 import OverlaySpinner from "@/components/ui/overlay-spinner";

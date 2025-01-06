@@ -19,7 +19,7 @@ import { useUserStore } from "@/lib/contexts/zustand/user-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BlinkDisplay } from "@/components/blink/blink-display";
 import { toast } from "sonner";
-import { defaultSchema, ServerFormData, serverFormSchema } from "@/lib/zod-validation";
+import { defaultSchema, ServerFormData, serverFormSchema } from "@/lib/zod-validation/server-form-data";
 import OverlaySpinner from "@/components/ui/overlay-spinner";
 import { ServerFormEdit } from "@/components/form/edit-guild";
 import { useWallet } from "@solana/wallet-adapter-react";

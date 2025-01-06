@@ -1,19 +1,12 @@
-import { motion } from "framer-motion";
+import { MotionCard } from "@/components/motion";
 
-interface MotionCardProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export const MotionCard = ({ children, className }: MotionCardProps) => {
+const Example = () => {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className={`bg-white p-6 rounded-lg shadow-md ${className}`}
-    >
-      {children}
-    </motion.div>
+    <MotionCard className="bg-gray-100">
+      <h2>Welcome to the MotionCard</h2>
+      <p>This card fades in on load with a smooth animation.</p>
+    </MotionCard>
   );
 };
+
+export default Example;

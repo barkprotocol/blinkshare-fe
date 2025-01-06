@@ -16,6 +16,22 @@ import { useWindowSize } from "@/hooks/use-window-size";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner";
 import { toast } from "sonner";
+import NotFound from "@/app/pages/not-found";
+
+// Define LeftSectionProps
+interface LeftSectionProps {
+  isAuthenticated: boolean;
+  code: string;
+  isLoading: boolean;
+  errorMessage: string | null;
+  onConnect: () => void;
+}
+
+// Define RightSectionProps
+interface RightSectionProps {
+  serverId: string;
+  code: string;
+}
 
 export default function BlinkPage() {
   const router = useRouter();
@@ -43,11 +59,23 @@ export default function BlinkPage() {
         { method: "GET", headers: { "Content-Type": "application/json" } }
       );
 
+      const textResponse = await response.text(); // Read the response as text
+      console.log(textResponse); // Log it to the console to inspect
+
       if (!response.ok) {
         throw new Error("Failed to initiate authentication");
       }
 
-      const data = await response.json();
+      let data;
+
+      try {
+        data = JSON.parse(textResponse); // Parse it as JSON
+      } catch (jsonError) {
+        console.error("Error parsing JSON response", jsonError);
+        setErrorMessage("Invalid response format. Please try again later.");
+        return;
+      }
+
       if (data.url) {
         window.location.href = `${data.url}&state=${serverId}`;
       } else {

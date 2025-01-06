@@ -1,39 +1,37 @@
-/* eslint-disable no-unused-vars */
-import ServerFormData from "../zod-validation";
-
+// SearchParamProps
 declare type SearchParamProps = {
   params: { [key: string]: string };
   searchParams: { [key: string]: string | string[] | undefined };
 };
 
-// ========================================
-
+// Discord-related Types
 declare interface DiscordRole {
   id: string;
   name: string;
-  price: string;
-  enabled: boolean;
+  price?: string; // Optional field for price
+  enabled?: boolean; // Optional field for enabled
   position?: number;
+  permissions?: string; // Optional field for permissions
 }
 
 declare type DiscordServer = {
   id: string;
   name: string;
   icon: string;
-  customIcon?: string; // Optional custom icon for the blink
+  customIcon?: string;
   description: string;
-  detailedDescription: string; // Long message about the server and roles
+  detailedDescription: string;
   roles: DiscordRole[];
-  ownerWallet: string; // Phantom wallet address of the server owner
+  ownerWallet: string;
 };
 
-declare type BlinkordServerSettings = {
+declare type BlinkShareServerSettings = {
   guildId: string;
   customTitle?: string;
   customIcon?: string;
   description: string;
   detailedDescription: string;
-  selectedRoles: string[]; // Array of role IDs selected for the blink
+  selectedRoles: string[];
   ownerWallet: string;
 };
 
@@ -67,56 +65,54 @@ declare type TransactionDetails = {
   sellerWallet: string;
 };
 
-declare type BlinkordApiResponse<T> = {
+declare type BlinkShareApiResponse<T> = {
   success: boolean;
   data?: T;
   error?: string;
 };
 
 // API request and response types
-declare type CreateBlinkRequest = BlinkordServerSettings;
+declare type CreateBlinkRequest = BlinkShareServerSettings;
 
-declare type CreateBlinkResponse = BlinkordApiResponse<{
+declare type CreateBlinkResponse = BlinkShareApiResponse<{
   blinkUrl: string;
 }>;
 
 declare type GetBlinkDataRequest = {
   guildId: string;
-  code: string; // Discord OAuth code
+  code: string;
 };
 
-declare type GetBlinkDataResponse = BlinkordApiResponse<BlinkData>;
+declare type GetBlinkDataResponse = BlinkShareApiResponse<BlinkData>;
 
 declare type ProcessTransactionRequest = TransactionDetails;
 
-declare type ProcessTransactionResponse = BlinkordApiResponse<{
+declare type ProcessTransactionResponse = BlinkShareApiResponse<{
   success: boolean;
   roleAssigned: boolean;
 }>;
 
-// User types
+// User Types
 declare type ServerOwner = SupabaseUser & {
-  ownedServers: string[]; // Array of guild IDs
+  ownedServers: string[];
 };
 
 declare type DiscordMember = SupabaseUser & {
   discordId: string;
-  joinedServers: string[]; // Array of guild IDs
+  joinedServers: string[];
 };
 
-// ========================================
-
+// Supabase User Types
 declare type SupabaseUser = Database["public"]["Tables"]["users"]["Row"];
 
-// Defining a generic response type for Supabase
 declare type SupabaseResponse<T> = {
   data: T | null;
   error: Error | null;
 };
 
-// ======================================== UI types
-
+// UI Types
 declare type ServerFormData = {
+  iconUrl: string | number | readonly string[] | undefined;
   title: string;
   description: string;
   details: string;
@@ -135,7 +131,6 @@ export interface BlinkProps {
 }
 
 // API Function Types
-
 declare type GetDiscordLoginUrl = (owner: boolean) => Promise<string>;
 
 declare type HandleDiscordCallback = (code: string) => Promise<{
@@ -148,10 +143,10 @@ declare type HandleDiscordCallback = (code: string) => Promise<{
 declare type GetGuildRoles = (
   guildId: string,
   token: string
-) => Promise<{ blinkordRolePosition: number; roles: DiscordRole[] }>;
+) => Promise<{ blinkShareRolePosition: number; roles: DiscordRole[] }>;
 
 declare type CreateOrEditGuild = (
-  guildData: BlinkordServerSettings,
+  guildData: BlinkShareServerSettings,
   address: string,
   message: string,
   signature: string,
@@ -160,14 +155,18 @@ declare type CreateOrEditGuild = (
 
 declare type PatchGuild = (
   guildId: string,
-  guildData: BlinkordServerSettings,
+  guildData: BlinkShareServerSettings,
   address: string,
   message: string,
   signature: string,
   token: string
 ) => Promise<DiscordServer>;
 
-type RoleData = { blinkordRolePosition: number; roles: DiscordRole[] };
+// RoleData Type
+export type RoleData = {
+  blinkShareRolePosition: number;
+  roles: DiscordRole[];
+};
 
 declare interface ServerFormProps {
   formData: ServerFormData;
