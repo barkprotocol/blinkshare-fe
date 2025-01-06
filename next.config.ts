@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Use the new remotePatterns configuration instead of domains
   images: {
     remotePatterns: [
       {
@@ -15,12 +14,11 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Disable ESLint during the build process
   eslint: {
-    ignoreDuringBuilds: true, // This disables ESLint errors during build
+    ignoreDuringBuilds: true, // Disables ESLint checks during the build process
   },
 
-  /* config options here */
+  // Add other custom Next.js configurations if needed
 };
 
 export default nextConfig;
