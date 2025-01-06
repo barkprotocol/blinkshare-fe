@@ -1,68 +1,25 @@
-export const handleDiscordCallback: HandleDiscordCallback = async (code) => {
-    const clientId = process.env.DISCORD_CLIENT_ID;
-    const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/discord/callback`;
-  
-    try {
-      // Make request to Discord API to exchange code for access token
-      const response = await fetch("https://discord.com/api/oauth2/token", {
-        method: "POST",
-        body: new URLSearchParams({
-          client_id: clientId || "",
-          client_secret: clientSecret || "",
-          code,
-          grant_type: "authorization_code",
-          redirect_uri: redirectUri,
-        }),
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Discord API responded with status ${response.status}`);
-      }
-  
-      const data = await response.json();
-  
-      if (!data.access_token) {
-        throw new Error("Failed to get access token from Discord API");
-      }
-  
-      // Fetch user and guilds information using the access token
-      const userResponse = await fetch("https://discord.com/api/v10/users/@me", {
-        headers: {
-          Authorization: `Bearer ${data.access_token}`,
-        },
-      });
-  
-      if (!userResponse.ok) {
-        throw new Error(`Failed to fetch user information: ${userResponse.status}`);
-      }
-  
-      const user = await userResponse.json();
-  
-      const guildResponse = await fetch("https://discord.com/api/v10/users/@me/guilds", {
-        headers: {
-          Authorization: `Bearer ${data.access_token}`,
-        },
-      });
-  
-      if (!guildResponse.ok) {
-        throw new Error(`Failed to fetch guilds information: ${guildResponse.status}`);
-      }
-  
-      const guilds = await guildResponse.json();
-  
-      return {
-        userId: user.id,
-        username: user.username,
-        guilds,
-        token: data.access_token,
-      };
-    } catch (error) {
-      console.error("Error handling Discord callback:", error);
-      throw new Error("An error occurred while processing the Discord callback");
-    }
-  };
-  
+import { NextResponse } from "next/server";
+
+// Handle GET requests
+export async function GET(request: Request) {
+  // Example logic for a GET request, such as fetching data from Discord
+  return NextResponse.json({ message: "GET request received" });
+}
+
+// Handle POST requests (e.g., Discord callback)
+export async function POST(request: Request) {
+  try {
+    // Parse the incoming request (Discord callback data)
+    const data = await request.json();
+
+    // Hhandle the Discord callback (e.g., saving data or making API calls)
+    console.log(data);
+
+    // Respond with a success message
+    return NextResponse.json({ message: "Discord callback processed successfully", data });
+  } catch (error) {
+    // Handle error if something goes wrong
+    console.error("Error processing Discord callback:", error);
+    return NextResponse.json({ message: "Failed to process callback", error: error.message }, { status: 500 });
+  }
+}
