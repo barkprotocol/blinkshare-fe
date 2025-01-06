@@ -43,10 +43,16 @@ export const useUserStore = create(
           discordConnected: false,
           discordDisconnected: false,
         }),
-      isLoggedIn: !!get().token,
+      isLoggedIn: false, // Default to false initially
     }),
     {
       name: "user-storage",
+      // Add a `onRehydrateStorage` to set `isLoggedIn` after hydration
+      onRehydrateStorage: () => (state) => {
+        if (state.token) {
+          state.isLoggedIn = true;
+        }
+      },
     }
   )
 );
