@@ -1,5 +1,5 @@
 import { useUserStore } from "@/lib/contexts/zustand/user-store";
-import { DiscordRole } from "@/lib/types/discord-server";
+import { DiscordRole } from "@/lib/types/discord-role";
 
 // Define the structure for the Roles response
 interface RolesResponse {
@@ -37,7 +37,7 @@ export const fetchRoles = async (guildId: string): Promise<RolesResponse> => {
       if (response.status === 401) {
         // Token expired or invalid; re-authentication is needed
         console.error("Token expired or invalid. Please log in again.");
-        // Optionally, trigger a logout or token refresh here
+        // Optionally trigger logout or refresh here
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -50,10 +50,13 @@ export const fetchRoles = async (guildId: string): Promise<RolesResponse> => {
       throw new Error("Invalid response format: 'roles' is not an array");
     }
 
-    return data;
+    // Ensure blinkShareRolePosition exists
+    const blinkShareRolePosition = data.blinkShareRolePosition ?? 0;
+
+    return { ...data, blinkShareRolePosition };
   } catch (error) {
     console.error(`Error fetching roles for guild ${guildId}:`, error);
-    // Optionally, add further error handling, such as reporting errors to an external service
-    throw error;
+    // Optionally report error to an external service here (e.g., Sentry)
+    throw error; // Propagate the error further
   }
 };

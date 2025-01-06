@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
 // Define the shape of the context state
 interface FormContextType {
@@ -23,8 +23,13 @@ export const useFormContext = () => {
   return context;
 };
 
+// Define the type for the props, including 'children' of type ReactNode
+interface FormProviderProps {
+  children: ReactNode;
+}
+
 // Form provider component
-export const FormProvider: React.FC = ({ children }) => {
+export const FormProvider: React.FC<FormProviderProps> = ({ children }) => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);

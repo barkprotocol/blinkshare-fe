@@ -236,6 +236,9 @@ importers:
       prisma:
         specifier: ^6.1.0
         version: 6.1.0
+      privy:
+        specifier: 0.4.1
+        version: 0.4.1
       react:
         specifier: 19.0.0
         version: 19.0.0
@@ -6815,6 +6818,9 @@ packages:
   private@0.1.8:
     resolution: {integrity: sha512-VvivMrbvd2nKkiG38qjULzlc+4Vx4wm/whI9pQD35YrARNnhxeiRktSOhSukRLFNlzg6Br/cJPet5J/u19r/mg==}
     engines: {node: '>= 0.6'}
+
+  privy@0.4.1:
+    resolution: {integrity: sha512-odgYv0I5U+vWCPUm2KpOoTDHJivub+VQDj5wvFe1W/GlqtBF2oYM92GbHRHIdBk39ms+LmIjoOVzDc6abFFjrg==}
 
   process-nextick-args@2.0.1:
     resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
@@ -17151,6 +17157,8 @@ snapshots:
       fsevents: 2.3.3
 
   private@0.1.8: {}
+
+  privy@0.4.1: {}
 
   process-nextick-args@2.0.1: {}
 

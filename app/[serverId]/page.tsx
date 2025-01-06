@@ -59,15 +59,15 @@ export default function BlinkPage() {
         { method: "GET", headers: { "Content-Type": "application/json" } }
       );
 
+      // Handle non-200 responses
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      }
+
       const textResponse = await response.text(); // Read the response as text
       console.log(textResponse); // Log it to the console to inspect
 
-      if (!response.ok) {
-        throw new Error("Failed to initiate authentication");
-      }
-
       let data;
-
       try {
         data = JSON.parse(textResponse); // Parse it as JSON
       } catch (jsonError) {

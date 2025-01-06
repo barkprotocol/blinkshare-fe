@@ -12,13 +12,13 @@ export const formatRolePrice = (price: string): string => {
 
 // Utility function to check if a role is enabled by roleId in the role data
 export const isRoleEnabled = (roleId: string, roleData: RoleData): boolean => {
-  const role = roleData.roles.find((role) => role.id === roleId);
+  const role = roleData.roles.find((role: { id: string; }) => role.id === roleId);
   return role ? role.enabled : false;
 };
 
 // Utility function to get the index of a role by its ID
 export const getRoleIndex = (roleId: string, roleData: RoleData): number => {
-  return roleData.roles.findIndex((role) => role.id === roleId);
+  return roleData.roles.findIndex((role: { id: string; }) => role.id === roleId);
 };
 
 // Utility function to merge server form data with role information, ensuring that role data is updated
@@ -27,7 +27,7 @@ export const mergeFormDataWithRoles = (
   roleData: RoleData
 ): ServerFormProps["formData"] => {
   const mergedRoles = formData.roles.map((role) => {
-    const roleInData = roleData.roles.find((r) => r.id === role.id);
+    const roleInData = roleData.roles.find((r: { id: string; }) => r.id === role.id);
     if (roleInData) {
       return { ...role, price: roleInData.price, enabled: roleInData.enabled };
     }
