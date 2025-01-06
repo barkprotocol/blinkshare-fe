@@ -1,75 +1,47 @@
-import DeployButton from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import HeaderAuth from "@/components/header-auth";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/utils/supabase/check-env-vars";
-import { Geist } from "next/font/google";
+"use client";
+
+import { useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
-import Link from "next/link";
-import "./globals.css";
+import "./styles/globals.css";
+import { Header } from "@/components/ui/layout/header";
+import Footer from "@/components/ui/layout/footer";
+import Head from "next/head";
+import WalletProvider from "@/components/ui/wallet-provider";
+import { Syne, Poppins } from "next/font/google";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
-export const metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
-};
-
-const geistSans = Geist({
-  display: "swap",
+const syne = Syne({ subsets: ["latin"], variable: "--font-syne" });
+const poppins = Poppins({
+  weight: ["400", "600"],
   subsets: ["latin"],
+  variable: "--font-poppins",
 });
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={geistSans.className} suppressHydrationWarning>
-      <body className="bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <main className="min-h-screen flex flex-col items-center">
-            <div className="flex-1 w-full flex flex-col gap-20 items-center">
-              <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-                <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-                  <div className="flex gap-5 items-center font-semibold">
-                    <Link href={"/"}>Next.js Supabase Starter</Link>
-                    <div className="flex items-center gap-2">
-                      <DeployButton />
-                    </div>
-                  </div>
-                  {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
-                </div>
-              </nav>
-              <div className="flex flex-col gap-20 max-w-5xl p-5">
-                {children}
-              </div>
-
-              <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-                <p>
-                  Powered by{" "}
-                  <a
-                    href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-                    target="_blank"
-                    className="font-bold hover:underline"
-                    rel="noreferrer"
-                  >
-                    Supabase
-                  </a>
-                </p>
-                <ThemeSwitcher />
-              </footer>
-            </div>
-          </main>
+    <html lang="en" className={`${syne.variable} ${poppins.variable}`} suppressHydrationWarning>
+      <Head>
+        <title>BlinkShare | Community Experience Redefined</title>
+        <meta
+          name="description"
+          content="Enhance your community experience with Blink Share's robust tools for payments, analytics, and management."
+        />
+        <meta property="og:title" content="Blink Share | Community Tools" />
+        <meta
+          property="og:description"
+          content="Seamless Solana-based transactions, insightful analytics, and role management for your community."
+        />
+        <meta property="og:image" content="/assets/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="canonical" href="https://blinkshare.fun" />
+      </Head>
+      <body className="bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col min-h-screen">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <WalletProvider>
+            <Header />
+            <main className="flex-grow w-full px-0 md:px-8 lg:px-0 py-0">{children}</main>
+            <Footer />
+          </WalletProvider>
         </ThemeProvider>
       </body>
     </html>
