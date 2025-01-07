@@ -19,6 +19,7 @@ const poppins = Poppins({
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const networkEnv = (process.env.NEXT_PUBLIC_SOLANA_NETWORK as WalletAdapterNetwork) || WalletAdapterNetwork.Mainnet;
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
   const router = useRouter();
 
@@ -29,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       console.error("Privy app ID is missing. Please set NEXT_PUBLIC_PRIVY_APP_ID in your environment variables.");
       toast.error("Configuration error. Please contact support.");
       setPrivyAppIdMissing(true);
-      router.push('/support');
+      router.push('https://doc.blinkshare.fun/support');
     }
   }, [privyAppId, router]);
 
