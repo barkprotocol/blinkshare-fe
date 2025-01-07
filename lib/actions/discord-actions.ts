@@ -1,11 +1,21 @@
 import { useUserStore } from "@/lib/contexts/zustand/user-store";
-import { DiscordRole } from "@/lib/types";
+import { DiscordRole } from "@/lib/types/discord-role";
 
 // Utility to retrieve the token
 const getToken = (): string | null => {
-  return (
-    useUserStore.getState().token || (typeof window !== "undefined" && localStorage.getItem("discordToken"))
-  );
+  const token = useUserStore.getState().token;
+  
+  // Check if token is a valid string, otherwise return null
+  if (typeof token === 'string' && token) {
+    return token;
+  }
+
+  // Fallback to retrieving token from localStorage if it's not available in the store
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("discordToken");
+  }
+
+  return null;
 };
 
 // Fetch roles for a given guild
@@ -19,15 +29,18 @@ export const fetchRoles = async (
     return { roles: [], blinkShareRolePosition: -1 };
   }
 
-  if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!apiBaseUrl) {
     console.error("API base URL is missing.");
     return { roles: [], blinkShareRolePosition: -1 };
   }
 
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/discord/guilds/${guildId}/roles`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      `${apiBaseUrl}/discord/guilds/${guildId}/roles`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
     );
 
     if (!response.ok) {
@@ -62,7 +75,8 @@ export const createEmbeddedWallet = async (
   discordUserId: string,
   address: string
 ): Promise<{ success: boolean; error?: string }> => {
-  if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!apiBaseUrl) {
     console.error("API base URL is missing.");
     return { success: false, error: "API base URL is not configured." };
   }
@@ -70,7 +84,7 @@ export const createEmbeddedWallet = async (
   try {
     const payload = { discordUserId, address };
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/discord/embedded-wallet`,
+      `${apiBaseUrl}/discord/embedded-wallet`,
       {
         method: "POST",
         headers: {

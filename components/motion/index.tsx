@@ -4,10 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
-// Use motion with Input, passing type="number" for number input functionality
-export const MotionCard = motion(Card);
-export const MotionCardContent = motion(CardContent);
-export const MotionInput = motion(Input);
-export const MotionNumberInput = motion((props) => <Input {...props} type="number" />);
-export const MotionTextarea = motion(Textarea);
-export const MotionButton = motion(Button);
+// Motion versions of the UI components
+export const MotionCard = motion(Card);  // Animate the Card component
+export const MotionCardContent = motion(CardContent);  // Animate the CardContent
+export const MotionInput = motion(Input);  // Animate the Input component
+export const MotionNumberInput = motion((props) => <Input {...props} type="number" />); // Input with number type
+export const MotionTextarea = motion(Textarea);  // Animate the Textarea component
+export const MotionButton = motion(Button);  // Animate the Button component

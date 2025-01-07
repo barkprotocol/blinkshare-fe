@@ -174,7 +174,7 @@ declare type SearchParamProps = {
   };
   
   // ServerFormProps: Props for the server form component
-  declare interface ServerFormProps {
+  export declare interface ServerFormProps {
     formData: ServerFormData;
     setFormData: React.Dispatch<React.SetStateAction<ServerFormData>>;
     roleData: RoleData;

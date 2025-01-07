@@ -1,4 +1,4 @@
-import { Role, RoleData, ServerFormProps } from "@/lib/types";
+import { RoleData, ServerFormProps } from "@/lib/types";
 import { toast } from "sonner";
 
 // Utility function to format a role price to a string with 2 decimal places

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DiscordServer } from "./types/discord-server";
+import { DiscordServer } from "./discord-server";
 
 // Default form data schema
 export const defaultSchema = {
@@ -78,6 +78,7 @@ export const serverFormSchema = z
       .default("Months"),
     notificationChannelId: z
       .string()
+      .nullable()
       .min(1, "Notification channel is required"),
   })
   .default(defaultSchema);

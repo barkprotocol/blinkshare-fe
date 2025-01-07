@@ -36,7 +36,9 @@ export const useBlinkStore = create<BlinkStore>((set) => ({
         console.error(`${key} cannot be empty`);
         return state;
       }
-      return { formData: { ...state.formData, [key]: value } };
+      return {
+        formData: { ...state.formData, [key]: value },
+      };
     }),
   addField: () =>
     set((state) => ({
@@ -53,7 +55,7 @@ export const useBlinkStore = create<BlinkStore>((set) => ({
       },
     })),
   updateFieldLabel: (index, label) =>
-    set((state: { formData: { fields: any; }; }) => {
+    set((state) => {
       const newFields = [...state.formData.fields];
       newFields[index] = label;
       return {

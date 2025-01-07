@@ -7,7 +7,7 @@ export const defaultSchema = {
   iconUrl: "",
   description: "",
   address: "",
-  website: "",
+  website: null,
   roles: [],
   useUsdc: true,
   limitedTimeRoles: false,
@@ -41,7 +41,8 @@ export const serverFormSchema = z
     address: z.string(),
     website: z
       .string()
-      .optional()
+      .nullable() // Allow null for website
+      .optional() // Make optional for validation
       .refine(
         (url) => {
           if (!url) return true; // If website is not provided, it's valid
@@ -64,7 +65,7 @@ export const serverFormSchema = z
               message:
                 "Amount must be a valid number or decimal greater than 0",
             })
-            .transform((val) => parseFloat(val).toString()), // Ensure amount is a positive number
+            .transform((val) => parseFloat(val)), // Transform amount to a number
         })
       )
       .min(1, "At least one role is required"),

@@ -24,7 +24,7 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
 
     // Conditionally add additional wallets (e.g., Phantom) based on environment
     if (process.env.NEXT_PUBLIC_ENABLE_PHANTOM_WALLET === "true") {
-      availableWallets.push(new PhantomkWalletAdapter());
+      availableWallets.push(new PhantomWalletAdapter());
     }
 
     return availableWallets;

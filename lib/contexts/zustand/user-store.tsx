@@ -1,3 +1,4 @@
+import { set } from "zod";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -34,8 +35,7 @@ export const useUserStore = create(
       setToken: (token: any) => set({ token }),
       setUserData: (data: any) => set({ userData: data }),
       setDiscordConnected: (connected: any) => set({ discordConnected: connected }),
-      setDiscordDisconnected: (disconnected: any) =>
-        set({ discordDisconnected: disconnected }),
+      setDiscordDisconnected: (disconnected: any) => set({ discordDisconnected: disconnected }),
       reset: () =>
         set({
           token: null,
@@ -48,9 +48,10 @@ export const useUserStore = create(
     {
       name: "user-storage",
       // Add a `onRehydrateStorage` to set `isLoggedIn` after hydration
-      onRehydrateStorage: () => (state: { token: any; isLoggedIn: boolean; }) => {
-        if (state.token) {
-          state.isLoggedIn = true;
+      onRehydrateStorage: () => (state: UserState | undefined) => {
+        if (state && state.token) {
+          // Safely check if the state and token exist
+          set({ isLoggedIn: true });
         }
       },
     }

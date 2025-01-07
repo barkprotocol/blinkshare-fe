@@ -1,4 +1,4 @@
-import { RoleData, ServerFormProps, Role } from "@/lib/types";
+import { RoleData, ServerFormProps } from "@/lib/types";
 import { fetchRoles } from "@/lib/actions/discord-actions";
 import { toast } from "sonner";
 import { Dispatch, SetStateAction } from "react";

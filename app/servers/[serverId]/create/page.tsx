@@ -21,9 +21,6 @@ export default function CreateServerPage() {
   const { signMessage, promptConnectWallet } = useWalletActions();
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [errorOccurred, setErrorOccurred] = useState(false);
-
-  const { guildName, guildImage } = JSON.parse(localStorage.getItem('selectedGuild') || '{}');
-
   const [formData, setFormData] = useState<ServerFormData>({ ...defaultSchema, id: serverId });
   const [roleData, setRoleData] = useState<RoleData>({ blinkShareRolePosition: -1, roles: [] });
   const [formErrors, setFormErrors] = useState<
@@ -34,6 +31,10 @@ export default function CreateServerPage() {
   const router = useRouter();
   const wallet = useWallet();
   const token = useUserStore((state) => state.token) || localStorage.getItem("discordToken");
+
+  // Retrieve guild info from localStorage
+  const guildData = localStorage.getItem('selectedGuild');
+  const { guildName, guildImage } = guildData ? JSON.parse(guildData) : {};
 
   useEffect(() => {
     if (guildName || guildImage) {
@@ -49,6 +50,7 @@ export default function CreateServerPage() {
     const fetchData = async () => {
       if (serverId) {
         try {
+          // Fetch roles data
           const rolesData = await fetchRoles(serverId);
           setRoleData({
             ...rolesData,
@@ -59,7 +61,7 @@ export default function CreateServerPage() {
             }))
           });
 
-          // Fetch channels
+          // Fetch channels data
           const channelsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/discord/guilds/${serverId}/channels`, {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -91,7 +93,7 @@ export default function CreateServerPage() {
     try {
       await promptConnectWallet();
       const validatedFormData = serverFormSchema.parse(formData);
-      const message = `Confirm creating Blink for ${guildName}`
+      const message = `Confirm creating Blink for ${guildName}`;
       const signature = await signMessage(message);
 
       if (signature) {
@@ -131,6 +133,7 @@ export default function CreateServerPage() {
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
+        // Handle validation errors
         const errors: Partial<Record<keyof ServerFormData, string>> = {};
         error.errors.forEach((err) => {
           if (err.path.length) {
