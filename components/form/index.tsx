@@ -18,7 +18,7 @@ import {
 } from "@/components/motion";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from "react";
 import {
   handleInputChange,
   handleDiscordRoleToggle,
@@ -179,7 +179,7 @@ function ServerForm({
                   className={`mt-1 w-full rounded border-gray-300 dark:border-gray-800 bg-transparent`}
                 >
                   <option value="null">None</option>
-                  {channels.map((channel) => (
+                  {channels.map((channel: { id: readonly string[] | Key | null | undefined; name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
                     <option key={channel.id} value={channel.id}>
                       {channel.name}
                     </option>

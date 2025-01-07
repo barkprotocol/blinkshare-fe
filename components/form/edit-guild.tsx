@@ -177,7 +177,7 @@ function ServerFormEdit({
               const value = e.target.value === "null" ? null : e.target.value;
               handleInputChange("notificationChannelId", value, setFormData);
             }}
-            className={`mt-1 w-full rounded border-gray-300 dark:border-gray-800 bg-transparent`}
+            className={`mt-1 w-full rounded border-gray-200 dark:border-gray-900 bg-transparent`}
           >
             <option value="null">None</option>
             {channels.map((channel) => (
@@ -256,7 +256,7 @@ function ServerFormEdit({
                 onChange={(e) =>
                   handleInputChange("limitedTimeQuantity", e.target.value, setFormData)
                 }
-                className="border rounded p-2 w-full bg-white text-black dark:bg-gray-950 dark:text-white dark:border-gray-700"
+                className="border rounded p-2 w-full bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
               >
                 {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
                   <option key={num} value={`${num}`}>{num}</option>
@@ -272,7 +272,7 @@ function ServerFormEdit({
                 onChange={(e) =>
                   handleInputChange("limitedTimeUnit", e.target.value, setFormData)
                 }
-                className="border rounded p-2 w-full bg-white text-black dark:bg-gray-950 dark:text-white dark:border-gray-700"
+                className="border rounded p-2 w-full bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
               >
                 <option value="Hours">Hours</option>
                 <option value="Days">Days</option>
@@ -327,7 +327,7 @@ function ServerFormEdit({
                         type="text"
                         placeholder="0"
                         value={role.price || ""}
-                        onChange={(e: { target: { value: string; }; }) =>
+                        onChange={(e) =>
                           handleDiscordRolePriceChange(
                             role.id,
                             e.target.value,
@@ -351,8 +351,8 @@ function ServerFormEdit({
                       animate={{ opacity: 1 }}
                       className="text-destructive text-sm mt-1"
                     >
-                      The BlinkShare Bot is unable to assign this role due to having a
-                      lower position on the role list. Drag the Blinkord role
+                      The bot is unable to assign this role due to having a
+                      lower position on the role list. Drag the BlinShare role
                       above the roles you want to enable, then refresh this page. For a tutorial
                       {" "}
                       <a

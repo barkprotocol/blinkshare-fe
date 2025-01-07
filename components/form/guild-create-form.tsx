@@ -99,7 +99,7 @@ const GuildCreateForm = ({ onSubmit }: GuildCreateFormProps) => {
 
       <button
         type="submit"
-        className="px-4 py-2 bg-blue-600 text-white rounded"
+        className="px-4 py-2 bg-gray-950 text-white rounded"
         disabled={isLoading}
       >
         {isLoading ? <LoadingSpinner /> : "Create Guild"}
