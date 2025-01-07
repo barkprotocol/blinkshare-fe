@@ -6,11 +6,11 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/ui/wallet-button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cog, Store, User } from 'lucide-react';
+import { Home, Store, User } from 'lucide-react';
 import { FaDiscord } from 'react-icons/fa';
 
 const navItems = [
-  { href: "/#features", icon: Cog, label: "Features" },
+  { href: "/", icon: Home, label: "Home" },
   { href: "/servers", icon: Store, label: "Marketplace" },
   { href: "https://discord.gg/invite/CjUeKEB7b6", icon: FaDiscord, label: "Discord" },
   { href: "/my-blinks", icon: User, label: "My Blinks" },

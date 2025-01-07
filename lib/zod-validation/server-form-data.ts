@@ -72,24 +72,36 @@ export const serverFormSchema = z
     limitedTimeRoles: z.boolean().default(false), // Default to false if not specified
     limitedTimeQuantity: z
       .string()
-      .default("1") // Default quantity to "1"
-      .transform((val) => parseInt(val).toString()), // Transform quantity to string
+      .default("1")
+      .refine(
+        (val) => !isNaN(parseInt(val, 10)) && parseInt(val, 10) > 0,
+        { message: "Quantity must be a positive number" }
+      )
+      .transform((val) => parseInt(val, 10).toString()), // Transform quantity to string
     limitedTimeUnit: z
       .string()
-      .refine((val) => ["Hours", "Days", "Weeks", "Months"].includes(val)) // Ensure the unit is valid
+      .refine((val) => ["Hours", "Days", "Weeks", "Months"].includes(val), {
+        message: "Invalid time unit. Must be Hours, Days, Weeks, or Months",
+      })
       .default("Months"), // Default unit to "Months"
-    notificationChannelId: z
-      .string()
-      .min(1, "Notification channel is required"), // Notification channel ID is required
+    notificationChannelId: z.string().optional(), // Optional notification channel
   })
   .default(defaultSchema); // Use default values when not specified
 
 // Type inference based on the schema
 export type ServerFormData = z.infer<typeof serverFormSchema>;
 
-// Example usage of validation and type checking
+// Helper function to format validation errors
+export function formatErrors(error: z.ZodError): Record<string, string[]> {
+  return error.errors.reduce((acc, curr) => {
+    const path = curr.path.join(".");
+    acc[path] = acc[path] || [];
+    acc[path].push(curr.message);
+    return acc;
+  }, {} as Record<string, string[]>);
+}
 
-// Example form data
+// Example usage of validation and type checking
 const formData: ServerFormData = {
   id: "server123",
   name: "My Discord Server",
@@ -116,8 +128,8 @@ const validationResult = serverFormSchema.safeParse(formData);
 
 if (validationResult.success) {
   // Proceed with the form submission or further logic
-  console.log('Form data is valid', validationResult.data);
+  console.log("Form data is valid", validationResult.data);
 } else {
   // Handle validation errors
-  console.error('Validation failed', validationResult.error.format());
+  console.error("Validation failed", formatErrors(validationResult.error));
 }

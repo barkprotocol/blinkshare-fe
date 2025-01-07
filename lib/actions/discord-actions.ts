@@ -1,99 +1,98 @@
 import { useUserStore } from "@/lib/contexts/zustand/user-store";
-import { DiscordRole } from "@/lib/types/discord-role";
+import { DiscordRole } from "@/lib/types";
 
-export const createEmbeddedWallet = async (accessToken: string, discordId: string, walletAddress: string) => {
+// Utility to retrieve the token
+const getToken = (): string | null => {
+  return (
+    useUserStore.getState().token || (typeof window !== "undefined" && localStorage.getItem("discordToken"))
+  );
+};
+
+// Fetch roles for a given guild
+export const fetchRoles = async (
+  guildId: string
+): Promise<{ roles: DiscordRole[]; blinkShareRolePosition: number }> => {
+  const token = getToken();
+
+  if (!token) {
+    console.error("No authorization token found.");
+    return { roles: [], blinkShareRolePosition: -1 };
+  }
+
+  if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+    console.error("API base URL is missing.");
+    return { roles: [], blinkShareRolePosition: -1 };
+  }
+
   try {
-    // Construct the request payload for creating an embedded wallet
-    const payload = {
-      discordId,
-      walletAddress,
-    };
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/discord/guilds/${guildId}/roles`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-    // Send the request to create the embedded wallet
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/wallet/create`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    // Handle non-OK responses
     if (!response.ok) {
-      if (response.status === 401) {
-        console.error("Token expired or invalid. Please log in again.");
-        // Trigger logout or re-authentication if necessary
-      }
-      throw new Error(`Error creating embedded wallet. Status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(
+        `Failed to fetch roles for guild ${guildId}: ${response.status} - ${response.statusText}`,
+        errorText
+      );
+      return { roles: [], blinkShareRolePosition: -1 };
     }
 
-    // Parse and return the response data
     const data = await response.json();
-    return data;
+
+    if (!Array.isArray(data.roles)) {
+      console.error("Invalid response format: 'roles' is not an array.");
+      return { roles: [], blinkShareRolePosition: -1 };
+    }
+
+    return {
+      roles: data.roles,
+      blinkShareRolePosition: data.blinkShareRolePosition ?? -1,
+    };
   } catch (error) {
-    console.error("Error creating embedded wallet:", error);
-    // Optionally report error to an external service (e.g., Sentry)
-    throw error; // Propagate the error further
+    console.error(`Error fetching roles for guild ${guildId}`, error);
+    return { roles: [], blinkShareRolePosition: -1 };
   }
 };
 
-// Define the structure for the Roles response
-interface RolesResponse {
-  roles: DiscordRole[];
-  blinkShareRolePosition: number;
-  [key: string]: number | DiscordRole[];
-}
-
-export const fetchRoles = async (guildId: string): Promise<RolesResponse> => {
-  // Get token from Zustand store or localStorage (only on the client side)
-  const token = typeof window !== 'undefined'
-    ? useUserStore.getState().token || localStorage.getItem("discordToken")
-    : null;
-
-  // If no token is found, log and throw error
-  if (!token) {
-    console.error("No authorization token found.");
-    throw new Error("Authorization token is missing");
+// Create an embedded wallet for a Discord user
+export const createEmbeddedWallet = async (
+  accessToken: string,
+  discordUserId: string,
+  address: string
+): Promise<{ success: boolean; error?: string }> => {
+  if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+    console.error("API base URL is missing.");
+    return { success: false, error: "API base URL is not configured." };
   }
 
   try {
-    // Send request to fetch roles from the API
+    const payload = { discordUserId, address };
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/discord/guilds/${guildId}/roles`,
-      { 
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        } 
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/discord/embedded-wallet`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
       }
     );
 
-    // Handle non-OK responses
     if (!response.ok) {
-      if (response.status === 401) {
-        // Token expired or invalid; re-authentication is needed
-        console.error("Token expired or invalid. Please log in again.");
-        // Optionally trigger logout or refresh here
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json();
+      console.error(
+        `Failed to create embedded wallet: ${response.status} - ${response.statusText}`,
+        errorData
+      );
+      return { success: false, error: errorData.error || "Unknown error occurred." };
     }
 
-    // Parse the response data
-    const data: RolesResponse = await response.json();
-
-    // Validate that the roles field is an array
-    if (!Array.isArray(data.roles)) {
-      throw new Error("Invalid response format: 'roles' is not an array");
-    }
-
-    // Ensure blinkShareRolePosition exists
-    const blinkShareRolePosition = data.blinkShareRolePosition ?? 0;
-
-    return { ...data, blinkShareRolePosition };
+    return { success: true };
   } catch (error) {
-    console.error(`Error fetching roles for guild ${guildId}:`, error);
-    // Optionally report error to an external service here (e.g., Sentry)
-    throw error; // Propagate the error further
+    console.error(`Error creating embedded wallet`, error);
+    return { success: false, error: `${error}` };
   }
 };
