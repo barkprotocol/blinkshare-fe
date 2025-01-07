@@ -237,8 +237,8 @@ export default function Servers() {
   return (
     <div className="px-4 py-8 sm:px-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-800">Your Servers</h1>
-        <p className="text-lg text-gray-600">Manage and configure your Discord servers with ease.</p>
+        <h1 className="text-3xl font-bold text-gray-800">Insufficient Permissions: You Need Admin or Owner Access</h1>
+        <p className="text-lg text-gray-600">It seems like you're not currently an owner or admin of this guild. Please ensure that your Discord permissions are correct or consider creating a new server to proceed..</p>
       </div>
 
       {error && (

@@ -1,203 +1,348 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { CardHeader, CardTitle } from "@/components/ui/card";
-import { useWalletActions } from "@/hooks/use-wallet-actions";
-import { z } from "zod";
-import { useUserStore } from "@/lib/contexts/zustand/user-store";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { ServerFormSkeleton } from "@/components/skeletons/server-form";
+import { RotateCcw, SaveIcon } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { ServerFormProps } from "@/lib/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  MotionCard,
+  MotionCardContent,
+  MotionInput,
+  MotionTextarea,
+  MotionNumberInput,
+  MotionButton,
+} from "@/components/motion";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { toast } from "sonner";
-import { DiscordRole, RoleData } from "@/lib/types/index";
-import { fetchRoles } from "@/lib/actions/discord-actions";
-import { defaultSchema, ServerFormData, serverFormSchema } from "@/lib/zod-validation/server-form-data";
-import { MotionCard, MotionCardContent } from "@/components/motion";
-import ServerForm from "@/components/form";
-import OverlaySpinner from "@/components/ui/overlay-spinner";
+import dynamic from "next/dynamic";
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from "react";
+import {
+  handleInputChange,
+  handleDiscordRoleToggle,
+  handleDiscordRolePriceChange,
+} from "@/components/form/form-common";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
+import SpinnerSvg  from "@/components/ui/spinner-svg";
+import { refreshRoles } from "@/components/form/form-common";
 
-export default function CreateServerPage() {
-  const { serverId } = useParams<{ serverId: string }>();
-  const { signMessage, promptConnectWallet } = useWalletActions();
-  const [overlayVisible, setOverlayVisible] = useState(false);
-  const [errorOccurred, setErrorOccurred] = useState(false);
-  const [formData, setFormData] = useState<ServerFormData>({ ...defaultSchema, id: serverId });
-  const [roleData, setRoleData] = useState<RoleData>({ blinkShareRolePosition: -1, roles: [] });
-  const [formErrors, setFormErrors] = useState<
-    Partial<Record<keyof ServerFormData, string>>
-  >({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [channels, setChannels] = useState<{ name: string; id: string }[]>([]);
-  const router = useRouter();
+const WalletMultiButtonDynamic = dynamic(
+  async () =>
+    (await import("@solana/wallet-adapter-react-ui")).WalletMultiButton,
+  { ssr: false }
+);
+
+function ServerForm({
+  formData,
+  setFormData,
+  roleData,
+  setRoleData,
+  formErrors,
+  onSubmit,
+  isLoading,
+  channels,
+}: ServerFormProps) {
   const wallet = useWallet();
-  const token = useUserStore((state) => state.token) || localStorage.getItem("discordToken");
+  const [roleErrors, setRoleErrors] = useState<{ [key: string]: boolean }>({});
+  const [isRefreshingRoles, setIsRefreshingRoles] = useState(false);
 
-  // Retrieve guild info from localStorage
-  const guildData = localStorage.getItem('selectedGuild');
-  const { guildName, guildImage } = guildData ? JSON.parse(guildData) : {};
-
-  useEffect(() => {
-    if (guildName || guildImage) {
-      setFormData((prev) => ({
-        ...prev,
-        name: guildName || prev.name,
-        iconUrl: guildImage || prev.iconUrl,
-      }));
-    }
-  }, [guildName, guildImage]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (serverId) {
-        try {
-          // Fetch roles data
-          const rolesData = await fetchRoles(serverId);
-          setRoleData({
-            ...rolesData,
-            roles: rolesData.roles.map((role: DiscordRole) => ({
-              ...role,
-              price: '',
-              enabled: false,
-            }))
-          });
-
-          // Fetch channels data
-          const channelsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/discord/guilds/${serverId}/channels`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (channelsResponse.ok) {
-            const channels = await channelsResponse.json();
-            setChannels(channels);
-          } else {
-            console.error("Failed to fetch channels");
-          }
-        } catch (error) {
-          console.error("Error fetching roles or channels:", error);
-          toast.error("Failed to fetch server roles or channels");
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-  }, [serverId, token]);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setOverlayVisible(true);
-    setErrorOccurred(false);
-    setIsLoading(true);
-
-    try {
-      await promptConnectWallet();
-      const validatedFormData = serverFormSchema.parse(formData);
-      const message = `Confirm creating Blink for ${guildName}`;
-      const signature = await signMessage(message);
-
-      if (signature) {
-        const payload = {
-          data: {
-            ...validatedFormData,
-            roles: roleData?.roles.filter((role: { enabled: any; }) => role.enabled).map((role: { id: any; name: any; price: { toString: () => any; }; }) => ({
-              id: role.id,
-              name: role.name,
-              amount: role.price.toString(),
-            })),
-          },
-          address: wallet.publicKey,
-          message,
-          signature,
-        };
-
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/discord/guilds`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${useUserStore.getState().token || localStorage.getItem("discordToken")}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          }
-        );
-
-        if (response.ok) {
-          toast.success("Server created successfully");
-          router.push(`/servers/${serverId}/success`);
-        } else {
-          toast.error("Error creating server");
-          setErrorOccurred(true);
-        }
-      }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        // Handle validation errors
-        const errors: Partial<Record<keyof ServerFormData, string>> = {};
-        error.errors.forEach((err) => {
-          if (err.path.length) {
-            const field = err.path[0];
-            if (typeof field === "string" && field in formData) {
-              errors[field as keyof ServerFormData] = err.message;
-            }
-          }
-        });
-        setFormErrors(errors);
-        console.log(errors);
-        toast.error(`Please fix the form errors: ${Object.values(errors).join('\n')}`);
-      } else {
-        console.error("Unexpected error:", error);
-        toast.error("An unexpected error occurred");
-      }
-    } finally {
-      setIsLoading(false);
-      setOverlayVisible(false);
-    }
-  };
+  if (isLoading) {
+    return <ServerFormSkeleton />;
+  }
 
   return (
-    <div className="space-y-6 p-6 bg-gradient-to-br from-[#dbcfc7] to-[#eae3de] dark:from-gray-900 dark:to-gray-800 min-h-screen">
-      {overlayVisible && (
-        <OverlaySpinner
-          text="Submitting your blink configuration"
-          error={errorOccurred}
-        />
-      )}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex items-center space-x-2 mb-6"
-      >
-        <h1 className="text-3xl font-bold text-primary">
-          👀 Create a Blink for {guildName}
-        </h1>
-      </motion.div>
-      <div className="flex flex-col space-y-4 lg:flex-row lg:space-x-4 lg:space-y-0">
-        <MotionCard
-          className="flex-1"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <CardHeader>
-            <CardTitle className="ml-5">Blink Details</CardTitle>
-          </CardHeader>
-          <MotionCardContent>
-            <ServerForm
-              formData={formData}
-              setFormData={setFormData}
-              roleData={roleData!}
-              setRoleData={setRoleData!}
-              formErrors={formErrors}
-              onSubmit={handleSubmit}
-              isLoading={isLoading}
-              channels={channels}
+    <form onSubmit={onSubmit} className="space-y-6 flex-col">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex-1">
+          <MotionCardContent
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Label htmlFor="name">Blink Title</Label>
+            <MotionInput
+              id="name"
+              placeholder="Enter a title for your blink"
+              value={formData.name}
+              onChange={(e) =>
+                handleInputChange("name", e.target.value, setFormData)
+              }
+              whileFocus={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
             />
+            {formErrors.name && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-destructive text-sm mt-1"
+              >
+                {formErrors.name}
+              </motion.p>
+            )}
           </MotionCardContent>
-        </MotionCard>
+
+          <MotionCardContent
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Label htmlFor="iconUrl">Blink Image URL</Label>
+            <MotionInput
+              id="iconUrl"
+              placeholder="Enter an image URL for your blink"
+              value={formData.iconUrl}
+              onChange={(e) =>
+                handleInputChange("iconUrl", e.target.value, setFormData)
+              }
+              whileFocus={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            />
+            {formErrors.iconUrl && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-destructive text-sm mt-1"
+              >
+                {formErrors.iconUrl}
+              </motion.p>
+            )}
+          </MotionCardContent>
+
+          <MotionCardContent
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Label htmlFor="description">Blink Description</Label>
+            <MotionTextarea
+              id="description"
+              placeholder="Enter blink description"
+              value={formData.description}
+              onChange={(e) =>
+                handleInputChange("description", e.target.value, setFormData)
+              }
+              whileFocus={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            />
+            {formErrors.description && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-destructive text-sm mt-1"
+              >
+                {formErrors.description}
+              </motion.p>
+            )}
+          </MotionCardContent>
+
+          <MotionCardContent
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-1">
+                <Label htmlFor="website">Website Link (optional)</Label>
+                <MotionInput
+                  id="website"
+                  placeholder="Enter the website URL"
+                  value={formData.website || ""}
+                  onChange={(e) =>
+                    handleInputChange("website", e.target.value, setFormData)
+                  }
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                />
+                {formErrors.website && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-destructive text-sm mt-1"
+                  >
+                    {formErrors.website}
+                  </motion.p>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center">
+                  <Label htmlFor="notificationChannelId" className="mr-2">Notifications Channel (optional)</Label>
+                  {HelpTooltip("Notifications for new role purchases will be sent to this channel on your Discord server")}
+                </div>
+                <select
+                  id="notificationChannelId"
+                  value={formData.notificationChannelId ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value === "null" ? null : e.target.value;
+                    handleInputChange("notificationChannelId", value, setFormData);
+                  }}
+                  className={`mt-1 w-full rounded border-gray-300 dark:border-gray-800 bg-transparent`}
+                >
+                  <option value="null">None</option>
+                  {channels.map((channel) => (
+                    <option key={channel.id} value={channel.id}>
+                      {channel.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </MotionCardContent>
+
+          <MotionCardContent
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-row w-full space-x-4"
+          >
+            <div className="flex flex-col w-1/4">
+              <div className="flex items-center">
+                <Label htmlFor="useUsdc" className="mr-1">Pay in $USDC</Label>
+                {HelpTooltip("Use $USDC token for payments instead of SOL")}
+              </div>
+
+              <Switch
+                id="useUsdc"
+                checked={formData.useUsdc}
+                onCheckedChange={(value) =>
+                  handleInputChange("useUsdc", value, setFormData)
+                }
+                className="mt-2"
+              />
+            </div>
+            <div className="flex flex-col w-1/4">
+              <div className="flex items-center">
+                <Label htmlFor="limitedTimeRoles" className="mr-2">Limited Time</Label>
+                {HelpTooltip("If toggled on, roles will be available to members for a limited time only and will be automatically removed afterwards.")}
+              </div>
+              <Switch
+                id="limitedTimeRoles"
+                checked={formData.limitedTimeRoles}
+                onCheckedChange={(value) =>
+                  handleInputChange("limitedTimeRoles", value, setFormData)
+                }
+                className="mt-2"
+              />
+            </div>
+
+            {formData.limitedTimeRoles && (
+              <>
+                <div className="flex flex-col w-1/4">
+                  <Label htmlFor="limitedTimeQuantity" className="mb-2">Amount</Label>
+                  <select
+                    id="limitedTimeQuantity"
+                    value={formData.limitedTimeQuantity}
+                    onChange={(e) =>
+                      handleInputChange("limitedTimeQuantity", e.target.value, setFormData)
+                    }
+                    className="border rounded p-2 w-full bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
+                  >
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
+                      <option key={num} value={`${num}`}>{num}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col w-1/4">
+                  <Label htmlFor="limitedTimeUnit" className="mb-2">Unit</Label>
+                  <select
+                    id="limitedTimeUnit"
+                    value={formData.limitedTimeUnit}
+                    onChange={(e) =>
+                      handleInputChange("limitedTimeUnit", e.target.value, setFormData)
+                    }
+                    className="border rounded p-2 w-full bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
+                  >
+                    <option value="hour">Hours</option>
+                    <option value="day">Days</option>
+                    <option value="week">Weeks</option>
+                    <option value="month">Months</option>
+                  </select>
+                </div>
+              </>
+            )}
+          </MotionCardContent>
+
+          <Separator />
+          <MotionButton
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="flex items-center justify-center w-full py-3 bg-black text-white"
+            type="submit"
+          >
+            <SaveIcon size={24} className="mr-2" />
+            Save
+          </MotionButton>
+        </div>
+
+        <div className="flex-1">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col"
+          >
+            <div className="flex justify-between items-center mt-6">
+              <span className="font-semibold">Server Roles</span>
+              <MotionButton
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  setIsRefreshingRoles(true);
+                  refreshRoles(wallet, setRoleData, setIsRefreshingRoles);
+                }}
+                disabled={isRefreshingRoles}
+                className="text-sm"
+              >
+                <RotateCcw
+                  size={18}
+                  className={`mr-2 ${isRefreshingRoles && "animate-spin"}`}
+                />
+                {isRefreshingRoles ? "Refreshing" : "Refresh"}
+              </MotionButton>
+            </div>
+
+            <ScrollArea className="mt-4 max-h-72">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                {roleData?.map((role) => (
+                  <MotionCard
+                    key={role.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="mb-4"
+                  >
+                    <MotionCardContent>
+                      <Label>{role.name}</Label>
+                      <MotionNumberInput
+                        value={role.price}
+                        onChange={(value) => handleDiscordRolePriceChange(value, role, setRoleData)}
+                        placeholder="Set price"
+                        className="w-full mt-2"
+                      />
+                      <div className="mt-2">
+                        <Switch
+                          id={`role-toggle-${role.id}`}
+                          checked={role.enabled}
+                          onCheckedChange={(value) =>
+                            handleDiscordRoleToggle(value, role.id, setRoleData)
+                          }
+                        />
+                      </div>
+                    </MotionCardContent>
+                  </MotionCard>
+                ))}
+              </motion.div>
+            </ScrollArea>
+          </motion.div>
+        </div>
       </div>
-    </div>
+    </form>
   );
 }
+
+export default ServerForm;

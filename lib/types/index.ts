@@ -1,3 +1,5 @@
+import { Dispatch, SetStateAction } from "react";
+
 // SearchParamProps: Defines the shape of search and route parameters
 declare type SearchParamProps = {
     params: { [key: string]: string }; // Route parameters
@@ -114,6 +116,14 @@ declare type SearchParamProps = {
   // UI Types
   
   declare type ServerFormData = {
+    name: string | number | readonly string[] | undefined;
+    website: string;
+    notificationChannelId: string;
+    useUsdc: boolean | undefined;
+    limitedTimeRoles: boolean | undefined;
+    limitedTimeQuantity: string | number | readonly string[] | undefined;
+    limitedTimeUnit: string;
+    id(id: any, roleData: RoleData, setRoleData: Dispatch<SetStateAction<RoleData>>, setIsRefreshingRoles: Dispatch<SetStateAction<boolean>>, setRoleErrors: Dispatch<SetStateAction<{ [key: string]: boolean; }>>): void;
     iconUrl: string | number | readonly string[] | undefined;
     title: string;
     description: string;
