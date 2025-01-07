@@ -116,6 +116,7 @@ declare type SearchParamProps = {
   // UI Types
   
   declare type ServerFormData = {
+    address: string | number | readonly string[] | undefined;
     name: string | number | readonly string[] | undefined;
     website: string;
     notificationChannelId: string;
@@ -179,6 +180,7 @@ declare type SearchParamProps = {
   
   // RoleData: Represents guild role data
   export type RoleData = {
+    [x: string]: any;
     blinkShareRolePosition: number;
     roles: DiscordRole[];
   };

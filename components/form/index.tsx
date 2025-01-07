@@ -18,13 +18,13 @@ import {
 } from "@/components/motion";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
-import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from "react";
+import { useState } from "react";
 import {
   handleInputChange,
   handleDiscordRoleToggle,
   handleDiscordRolePriceChange,
 } from "./form-common";
-import { HelpTooltip } from "@/components/ui/help-tooltip";
+import { HelpTooltip } from "../ui/tooltip";
 import { SpinnerSvg } from "../loading";
 import { refreshRoles } from "./form-common";
 
@@ -277,7 +277,7 @@ function ServerForm({
               <Separator className="my-4" />
               <ScrollArea className="max-h-[300px] overflow-y-scroll">
                 {roleData.roles.length > 0 ? (
-                  roleData.roles.map((role: { id: Key | null | undefined; enabled: boolean | undefined; name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; price: any; }) => (
+                  roleData.roles.map((role) => (
                     <motion.div
                       key={role.id}
                       initial={{ opacity: 0, x: -20 }}
@@ -325,7 +325,7 @@ function ServerForm({
                             step="0.00000001"
                             transition={{ type: "spring", stiffness: 300 }}
                           />
-                          <span className="text-gray-600">{formData.useUsdc ? 'USDC' : formData.limitedTimeRoles ? 'SOL' : 'BARK'}</span>
+                          <span className="text-gray-600">{formData.useUsdc ? 'USDC' : 'SOL'}</span>
                         </div>
                       </div>
                       {roleErrors[role.id] && (
@@ -337,7 +337,7 @@ function ServerForm({
                           The bot is unable to assign this role due to having a lower position on the role list. Drag the blinkShare role above the roles which you want to enable. For a tutorial{" "}
                           <a
                             className="underline"
-                            href="https://youtube/"
+                            href="https://youtu.be/HBqebvEi8Vk?si=X72ZRggcp4ieq04G&t=10"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
