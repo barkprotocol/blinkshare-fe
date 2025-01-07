@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { FC, useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -21,7 +21,7 @@ export const WalletButton: FC = () => {
 
     const handleWalletClick = () => {
         if (!wallet || !connected) {
-            setVisible(true);
+            setVisible(true); // Open wallet modal if not connected
         } else {
             disconnect().catch((error) => {
                 console.error('Failed to disconnect:', error);
@@ -46,6 +46,7 @@ export const WalletButton: FC = () => {
 
     return (
         <div className="flex items-center space-x-2">
+            {/* Connect/Disconnect Button */}
             <Button
                 onClick={handleWalletClick}
                 variant="outline"
@@ -54,6 +55,8 @@ export const WalletButton: FC = () => {
             >
                 {connecting ? 'Connecting...' : connected ? 'Disconnect' : 'Connect Wallet'}
             </Button>
+
+            {/* Display Wallet Address if connected */}
             {connected && publicKey && (
                 <Button
                     onClick={copyAddress}
