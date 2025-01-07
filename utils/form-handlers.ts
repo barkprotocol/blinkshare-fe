@@ -7,7 +7,7 @@ export const handleInputChange = (
   value: any,
   setFormData: React.Dispatch<React.SetStateAction<FormData>>
 ) => {
-  setFormData((prev) => ({ ...prev, [field]: value }));
+  setFormData((prev: any) => ({ ...prev, [field]: value }));
 };
 
 // Toggle role's enabled state and update the role data
@@ -46,7 +46,7 @@ export const handleDiscordRoleToggle = (
       amount: r.price,
     }));
 
-  setFormData((prev) => ({ ...prev, roles: enabledRoles }));
+  setFormData((prev: any) => ({ ...prev, roles: enabledRoles }));
 };
 
 // Change the price of a role and update the role data and form data
@@ -72,7 +72,7 @@ export const handleDiscordRolePriceChange = (
       amount: price,
     }));
 
-  setFormData((prev) => ({ ...prev, roles: enabledRoles }));
+  setFormData((prev: any) => ({ ...prev, roles: enabledRoles }));
 };
 
 // Refresh the roles from the backend and merge them with the current state
@@ -87,7 +87,7 @@ export const refreshRoles = async (
   try {
     // Fetch the updated roles from the backend (replace with your actual fetching logic)
     const allRoles = await fetchRoles(formDataId); // Ensure fetchRoles is properly imported or defined
-    const mergedRoles = allRoles.roles.map((role) => {
+    const mergedRoles = allRoles.roles.map((role: { id: string; }) => {
       const selectedRole = roleData.roles.find((r) => r.id === role.id);
       return selectedRole
         ? { ...role, price: selectedRole.price, enabled: selectedRole.enabled }

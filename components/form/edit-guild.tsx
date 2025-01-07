@@ -352,7 +352,7 @@ function ServerFormEdit({
                       className="text-destructive text-sm mt-1"
                     >
                       The BlinkShare Bot is unable to assign this role due to having a
-                      lower position on the role list. Drag the blinkShare role
+                      lower position on the role list. Drag the Blinkord role
                       above the roles you want to enable, then refresh this page. For a tutorial
                       {" "}
                       <a

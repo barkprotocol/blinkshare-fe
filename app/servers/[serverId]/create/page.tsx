@@ -25,7 +25,7 @@ export default function CreateServerPage() {
   const { guildName, guildImage } = JSON.parse(localStorage.getItem('selectedGuild') || '{}');
 
   const [formData, setFormData] = useState<ServerFormData>({ ...defaultSchema, id: serverId });
-  const [roleData, setRoleData] = useState<RoleData>({ blinkShareRolePosition: -1, roles: [] });
+  const [roleData, setRoleData] = useState<RoleData>({ blinkordRolePosition: -1, roles: [] });
   const [formErrors, setFormErrors] = useState<
     Partial<Record<keyof ServerFormData, string>>
   >({});
@@ -184,7 +184,7 @@ export default function CreateServerPage() {
           <MotionCardContent>
             <ServerForm
               formData={formData}
-              setFormData={setFormData}
+              formData={setFormData}
               roleData={roleData!}
               setRoleData={setRoleData!}
               formErrors={formErrors}

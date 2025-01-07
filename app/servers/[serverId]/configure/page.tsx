@@ -69,16 +69,16 @@ const ServerConfigPage = () => {
         guild={guild}
         formData={formData}
         onSubmit={handleGuildUpdate}
-        onInputChange={(field, value) => handleInputChange(field, value, setFormData)}
+        onInputChange={(field: string | number | symbol, value: any) => handleInputChange(field, value, setFormData)}
       />
 
       <h2 className="text-2xl mt-8">Manage Roles</h2>
       <RoleManager
         roles={roles}
-        onRoleToggle={(roleId, roleData) =>
+        onRoleToggle={(roleId: string, roleData: RoleData) =>
           handleDiscordRoleToggle(roleId, roleData, setRoles, setFormData, setRoleErrors)
         }
-        onRolePriceChange={(roleId, price) =>
+        onRolePriceChange={(roleId: string, price: string) =>
           handleDiscordRolePriceChange(roleId, price, roles, setRoles, setFormData)
         }
         roleErrors={roleErrors}

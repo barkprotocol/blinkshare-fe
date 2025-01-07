@@ -42,7 +42,7 @@ export const serverFormSchema = z
     address: z.string().min(1, "Address is required"),
     website: z
       .string()
-      .nullable()
+      .optional() // Allow the field to be optional
       .refine(
         (url) => {
           if (!url) return true; // Allow null or empty string
@@ -74,86 +74,16 @@ export const serverFormSchema = z
       .transform((val) => parseInt(val, 10).toString()),
     limitedTimeUnit: z
       .string()
-      .refine((val) => ["Hours", "Days", "Weeks", "Months"].includes(val))
+      .refine((val) => ["Hours", "Days", "Weeks", "Months"].includes(val), {
+        message: "Invalid time unit. Choose one of: Hours, Days, Weeks, Months.",
+      })
       .default("Months"),
     notificationChannelId: z
       .string()
-      .nullable()
-      .min(1, "Notification channel is required"),
+      .optional() // Allow the field to be optional
+      .refine(
+        (value) => value === undefined || value.length > 0,
+        "Notification channel ID is required if specified"
+      ),
   })
   .default(defaultSchema);
-
-// Renamed type to avoid conflict with imports
-export type FormDataSchema = z.infer<typeof serverFormSchema>;
-
-// Database schema types
-declare global {
-  // Assuming you have a Supabase or similar database schema
-  type Database = {
-    public: {
-      Tables: {
-        users: {
-          Row: {
-            id: string;
-            username: string;
-            email: string;
-            // other fields...
-          };
-        };
-        // other tables...
-      };
-    };
-  };
-}
-
-// Export the types needed
-export type ServerFormData = FormDataSchema; // Use the renamed type
-export type ServerOwner = SupabaseUser & {
-  ownedServers: string[];
-};
-
-export type DiscordMember = SupabaseUser & {
-  discordId: string;
-  joinedServers: string[];
-};
-
-export type SupabaseUser = Database["public"]["Tables"]["users"]["Row"];
-
-export type SupabaseResponse<T> = {
-  data: T | null;
-  error: Error | null;
-};
-
-// UI Types
-export interface ServerFormProps {
-  formData: FormDataSchema;
-  setFormData: React.Dispatch<React.SetStateAction<FormDataSchema>>;
-  formErrors: Partial<Record<keyof FormDataSchema, string>>;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
-  isLoading: boolean;
-  channels: { name: string; id: string }[];
-}
-
-// Additional types as required
-export interface BlinkAction {
-  title: string;
-  description: string;
-  fields: string[];
-}
-
-export interface BlinkProps {
-  action: BlinkAction;
-  websiteText: string;
-}
-
-// API Function Types
-export type GetDiscordLoginUrl = (owner: boolean) => Promise<string>;
-
-export type HandleDiscordCallback = (code: string) => Promise<{
-  userId: string;
-  username: string;
-  guilds: DiscordServer[];
-  token: string;
-}>;
-
-// Add other necessary types here...
