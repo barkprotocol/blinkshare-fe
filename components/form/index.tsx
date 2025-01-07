@@ -334,7 +334,7 @@ function ServerForm({
                           animate={{ opacity: 1 }}
                           className="text-destructive text-sm mt-1"
                         >
-                          The bot is unable to assign this role due to having a lower position on the role list. Drag the Blinkord role above the roles which you want to enable. For a tutorial{" "}
+                          The bot is unable to assign this role due to having a lower position on the role list. Drag the blinkShare role above the roles which you want to enable. For a tutorial{" "}
                           <a
                             className="underline"
                             href="https://youtube/"

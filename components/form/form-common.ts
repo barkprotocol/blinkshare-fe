@@ -1,101 +1,114 @@
-import { RoleData, ServerFormProps } from "@/lib/types";
+import { RoleData, ServerFormProps, Role } from "@/lib/types";
 import { fetchRoles } from "@/lib/actions/discord-actions";
 import { toast } from "sonner";
 import { Dispatch, SetStateAction } from "react";
 
-export const handleInputChange = (
-  field: keyof ServerFormProps["formData"],
-  value: any,
-  setFormData: React.Dispatch<React.SetStateAction<any>>
-) => {
-  setFormData((prev: any) => ({ ...prev, [field]: value }));
+// Handle input changes for form data
+export const handleInputChange = <T extends keyof ServerFormProps["formData"]>(
+  field: T,
+  value: ServerFormProps["formData"][T],
+  setFormData: Dispatch<SetStateAction<ServerFormProps["formData"]>>
+): void => {
+  setFormData((prev) => ({ ...prev, [field]: value }));
 };
 
+// Handle toggling of Discord roles
 export const handleDiscordRoleToggle = (
   roleId: string,
   roleData: RoleData,
-  setRoleData: React.Dispatch<React.SetStateAction<any>>,
-  setFormData: React.Dispatch<React.SetStateAction<any>>,
-  setRoleErrors: React.Dispatch<
-    React.SetStateAction<{ [key: string]: boolean }>
-  >
-) => {
-  const role = roleData.roles.find((role: any) => role.id === roleId);
+  setRoleData: Dispatch<SetStateAction<RoleData>>,
+  setFormData: Dispatch<SetStateAction<ServerFormProps["formData"]>>,
+  setRoleErrors: Dispatch<SetStateAction<Record<string, boolean>>>
+): void => {
+  const role = roleData.roles.find((role) => role.id === roleId);
 
   if (!role) return;
 
-  if (roleData.blinkordRolePosition <= (role.position || 0)) {
-    console.log(role.position, roleData.blinkordRolePosition);
+  if (roleData.blinkShareRolePosition <= (role.position || 0)) {
     setRoleErrors((prev) => ({ ...prev, [roleId]: true }));
     return;
   }
 
   setRoleErrors((prev) => ({ ...prev, [roleId]: false }));
 
-  const updatedRoles = roleData.roles.map((r: any) =>
+  const updatedRoles = roleData.roles.map((r) =>
     r.id === roleId ? { ...r, enabled: !r.enabled } : r
   );
 
-  setRoleData({ ...roleData, roles: updatedRoles });
+  setRoleData((prev) => ({ ...prev, roles: updatedRoles }));
 
   const enabledRoles = updatedRoles
-    .filter((r: any) => r.enabled)
-    .map((r: any) => ({
+    .filter((r) => r.enabled)
+    .map((r) => ({
       id: r.id,
       name: r.name,
       amount: r.price,
     }));
 
-  setFormData((prev: any) => ({ ...prev, roles: enabledRoles }));
+  setFormData((prev) => ({ ...prev, roles: enabledRoles }));
 };
 
+// Handle price changes for Discord roles
 export const handleDiscordRolePriceChange = (
   roleId: string,
   price: string,
   roleData: RoleData,
-  setRoleData: React.Dispatch<React.SetStateAction<any>>,
-  setFormData: React.Dispatch<React.SetStateAction<any>>
-) => {
-  const updatedRoles = roleData.roles.map((role: any) =>
+  setRoleData: Dispatch<SetStateAction<RoleData>>,
+  setFormData: Dispatch<SetStateAction<ServerFormProps["formData"]>>
+): void => {
+  const updatedRoles = roleData.roles.map((role) =>
     role.id === roleId ? { ...role, price } : role
   );
 
-  setRoleData({ ...roleData, roles: updatedRoles });
+  setRoleData((prev) => ({ ...prev, roles: updatedRoles }));
 
   const enabledRoles = updatedRoles
-    .filter((role: any) => role.enabled)
-    .map((role: any) => ({
+    .filter((role) => role.enabled)
+    .map((role) => ({
       id: role.id,
       name: role.name,
-      amount: price,
+      amount: role.price,
     }));
 
-  setFormData((prev: any) => ({ ...prev, roles: enabledRoles }));
+  setFormData((prev) => ({ ...prev, roles: enabledRoles }));
 };
 
+// Fetch and refresh Discord roles
 export const refreshRoles = async (
   formDataId: string,
   roleData: RoleData,
-  setRoleData: Dispatch<SetStateAction<any>>,
+  setRoleData: Dispatch<SetStateAction<RoleData>>,
   setIsRefreshingRoles: Dispatch<SetStateAction<boolean>>,
-  setRoleErrors: Dispatch<SetStateAction<{ [key: string]: boolean }>>
-) => {
+  setRoleErrors: Dispatch<SetStateAction<Record<string, boolean>>>,
+  setErrorMessage: Dispatch<SetStateAction<string>>
+): Promise<void> => {
   setIsRefreshingRoles(true);
+  setErrorMessage("");
+
   try {
     const allRoles = await fetchRoles(formDataId);
-    const mergedRoles = allRoles.roles.map((role: any) => {
-      const selectedRole = roleData.roles.find((r: any) => r.id === role.id);
+
+    const mergedRoles: Role[] = allRoles.roles.map((role) => {
+      const selectedRole = roleData.roles.find((r) => r.id === role.id);
       return selectedRole
         ? { ...role, price: selectedRole.price, enabled: selectedRole.enabled }
-        : role;
+        : { ...role, price: '', enabled: false };
     });
-    setRoleData({ ...allRoles, roles: mergedRoles });
+
+    setRoleData((prev) => ({
+      ...prev,
+      roles: mergedRoles,
+      blinkShareRolePosition: allRoles.blinkShareRolePosition,
+    }));
+
     setRoleErrors({});
     toast.success("Roles refreshed successfully");
   } catch (error) {
     console.error("Error refreshing roles", error);
-    toast.error("Failed to refresh roles");
+    setErrorMessage("Failed to refresh roles. Please try again.");
+    toast.error("Failed to refresh roles. Please try again.");
   } finally {
     setIsRefreshingRoles(false);
   }
 };
+
