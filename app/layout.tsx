@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <WalletProvider>
             <Header />
-            <main className="flex-grow w-full px-0 md:px-8 lg:px-0 py-0">{children}</main>
+            <main className="flex-grow w-full px-0 md:px-0 lg:px-0 py-0">{children}</main>
             <Footer />
           </WalletProvider>
         </ThemeProvider>
