@@ -53,7 +53,7 @@ export const BlinkDisplay: React.FC<BlinkDisplayProps> = ({ serverId, code }) =>
           action && (
             <Blink
                 action={action}
-                websiteText="BlinkShare"
+                websiteText="blinkshare.fun"
                 stylePreset={stylePreset} adapter={{
                   pathPattern: '',
                   apiPath: ''
