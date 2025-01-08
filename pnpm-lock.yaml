@@ -288,8 +288,8 @@ importers:
         specifier: ^6.37.5
         version: 6.37.5(pg-hstore@2.3.4)(pg@8.13.1)
       solana:
-        specifier: link:@privy-io/react-auth/solana
-        version: link:@privy-io/react-auth/solana
+        specifier: link:@dialectlabs/blinks/hooks/solana
+        version: link:@dialectlabs/blinks/hooks/solana
       sonner:
         specifier: ^1.7.1
         version: 1.7.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)

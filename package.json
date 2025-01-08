@@ -107,7 +107,7 @@
     "react-use": "^17.6.0",
     "recharts": "^2.15.0",
     "sequelize": "^6.37.5",
-    "solana": "link:@privy-io/react-auth/solana",
+    "solana": "link:@dialectlabs/blinks/hooks/solana",
     "sonner": "^1.7.1",
     "telegraf": "^4.16.3",
     "uuid": "^11.0.4",
