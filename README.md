@@ -1,6 +1,6 @@
 # BARK | BlinkShare Frontend (MVP)
 
-![BlinkShare Hero Image](/frontend/public/assets/landing-page.png)
+![BlinkShare Hero Image](/public/assets/landing-page.png)
 
 ![Bootstrapped][https://github.com/barkprotocol/blinkshare-platform]
 
@@ -38,8 +38,7 @@
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/your-repo/blinkshare.git
-cd frontend
+git clone https://github.com/bark-protocol/blinkshare.git
 ```
 
 ### Install Dependencies
@@ -54,9 +53,8 @@ NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 NEXT_PUBLIC_SOLANA_NETWORK=devnet
 NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
-DIALECT_API_KEY=<your-dialect-api-key>
-JWT_SECRET=<your-jwt-secret>
-SECRET_KEY=<your-secret-key>
+NEXT_PUBLIC_HELIUS_URL=
+NEXT_PUBLIC_PRIVY_APP_ID=
 ```
 
 ### Database Setup
