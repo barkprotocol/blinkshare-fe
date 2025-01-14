@@ -1,0 +1,107 @@
+/* Page Wrapper */
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100vh;
+    background-color: #000; /* Black layout */
+    color: #333; /* Dark title text */
+  }
+  
+  /* Main Content */
+  .main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+  
+  /* Content Container */
+  .content-container {
+    max-width: 1200px;
+    width: 100%;
+    text-align: center;
+    margin: 0 auto;
+  }
+  
+  /* Title Styling */
+  .page-title {
+    color: #222; /* Dark title color */
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Card Grid */
+  .blinks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+    justify-content: center;
+  }
+  
+  /* Card */
+  .card {
+    background-color: #fff; /* White card */
+    border-radius: 16px; /* Radius x4 */
+    padding: 1.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: left;
+  }
+  
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #222;
+  }
+  
+  .card-description {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 1rem;
+  }
+  
+  /* Button */
+  .card-button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem; /* Small button */
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff; /* White text */
+    background-color: #000; /* Black button */
+    border: none;
+    border-radius: 16px; /* Radius x4 */
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .card-button:hover {
+    background-color: #444;
+  }
+  
+  /* Empty Card */
+  .empty-card {
+    border: 2px dashed #ddd;
+    border-radius: 16px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #aaa;
+    font-size: 1rem;
+    font-style: italic;
+  }
+  
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 1rem;
+    background-color: #f9f9f9;
+  }
+  

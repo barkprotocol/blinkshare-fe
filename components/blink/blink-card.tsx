@@ -1,51 +1,65 @@
-"use client"
+import { useState } from "react"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Check, Copy, Twitter } from 'lucide-react'
 
-import { motion } from "framer-motion"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BlinkTemplate } from "@/lib/types/blink"
-import Image from "next/image"
-import { cn } from "@/lib/utils"
-
-interface BlinkCardProps extends BlinkTemplate {
-  onClick: () => void
-  isSelected?: boolean
+interface BlinkCardProps {
+  blink: {
+    _id: string
+    title: string
+    description: string
+    privateKey: boolean
+    mint: boolean
+  }
 }
 
-export function BlinkCard({ type, title, description, icon, onClick, isSelected }: BlinkCardProps) {
+export function BlinkCard({ blink }: BlinkCardProps) {
+  const [copied, setCopied] = useState(false)
+  const blinkLink = `https://dial.to/${blink.privateKey ? 'devnet' : ''}?action=solana-action:${blink._id}`
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(blinkLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleTweet = () => {
+    const tweetText = `Check out this Blink I just made @blinksharedotfun: ${blinkLink}`
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank')
+  }
+
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-    >
-      <Card className={cn(
-        "cursor-pointer transition-colors",
-        isSelected ? "border-primary bg-primary/5" : "hover:border-primary/50"
-      )}>
-        <CardHeader>
-          <div className="flex items-center space-x-4">
-            <div className="rounded-md bg-primary/10 p-2">
-              <Image
-                src={icon}
-                alt={title}
-                width={24}
-                height={24}
-                className="h-6 w-6"
-              />
-            </div>
-            <div>
-              <CardTitle>{title}</CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
-                {type}
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </CardContent>
-      </Card>
-    </motion.div>
+    <Card>
+      <CardHeader>
+        <CardTitle>{blink.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-gray-500">{blink.description || "No description provided."}</p>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={handleCopy}>
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{copied ? "Copied!" : "Copy link"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <Button variant="outline" size="icon" onClick={handleTweet}>
+          <Twitter className="h-4 w-4" />
+        </Button>
+        <Button asChild>
+          <a href={blinkLink} target="_blank" rel="noopener noreferrer">
+            {blink.mint ? "Tokens" : blink.privateKey ? "NFT" : "Donate"}
+          </a>
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }
 
