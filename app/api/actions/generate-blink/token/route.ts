@@ -5,17 +5,16 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplCore } from '@metaplex-foundation/mpl-core';
 import { TokenListProvider } from '@solana/spl-token-registry';
 import { getMint } from '@solana/spl-token';
-import { publicKey } from '@metaplex-foundation/umi';
-import {
-  fetchMerkleTree,
-  fetchTreeConfigFromSeeds,
-} from '@metaplex-foundation/mpl-bubblegum';
 
-// Create Umi instance
-const umi = createUmi(process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com').use(mplCore());
-const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com');
+// Environment Variables
+const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+const BLINK_BASE_URL = process.env.NEXT_PUBLIC_BLINK_URL || 'https://blinkshare.fun/generator';
 
-// Fetch token metadata using Metaplex
+// Umi and Solana Connection
+const umi = createUmi(SOLANA_RPC_URL).use(mplCore());
+const connection = new Connection(SOLANA_RPC_URL);
+
+// Utility Function: Fetch Token Metadata
 async function fetchTokenMetadata(mintAddress: PublicKey) {
   try {
     const { metadata: { Metadata } } = await import('@metaplex-foundation/mpl-token-metadata');
@@ -28,7 +27,7 @@ async function fetchTokenMetadata(mintAddress: PublicKey) {
   }
 }
 
-// Fetch token information from the SPL Token Registry
+// Utility Function: Fetch Token Info from Registry
 async function fetchTokenInfoFromRegistry(mintAddress: string) {
   const tokenList = await new TokenListProvider().resolve();
   const tokens = tokenList.getList();
@@ -37,7 +36,7 @@ async function fetchTokenInfoFromRegistry(mintAddress: string) {
   return { name: tokenInfo.name, image: tokenInfo.logoURI };
 }
 
-// Handle GET requests
+// GET Handler
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -61,7 +60,7 @@ export async function GET(req: Request) {
   }
 }
 
-// Handle POST requests
+// POST Handler
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
@@ -104,7 +103,7 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     });
 
-    const blinkLink = `${process.env.NEXT_PUBLIC_BLINK_URL || 'https://blinkshare.fun'}/api/actions/tokens/${result.insertedId}`;
+    const blinkLink = `${BLINK_BASE_URL}/api/actions/tokens/${result.insertedId}`;
     return NextResponse.json({ blinkLink });
   } catch (error) {
     console.error('POST Error:', error);
