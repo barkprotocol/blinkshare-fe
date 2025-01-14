@@ -1,28 +1,74 @@
 'use client';
 
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { FC, useState, useEffect } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from "@/components/ui/button";
+import { toast } from 'sonner';
 
-export function WalletButton() {
-  const { connected, publicKey } = useWallet();
-  const { setVisible } = useWalletModal();
+export const WalletButton: FC = () => {
+    const { publicKey, wallet, disconnect, connecting, connected } = useWallet();
+    const { setVisible } = useWalletModal();
+    const [copying, setCopying] = useState(false);
 
-  const handleClick = () => {
-    if (!connected) {
-      setVisible(true);
-    }
-  };
+    useEffect(() => {
+        if (connected) {
+            toast.success('Wallet connected successfully!');
+        } else {
+            toast.info('Wallet disconnected.');
+        }
+    }, [connected]);
 
-  return (
-    <Button
-      onClick={handleClick}
-      className="text-white bg-black border border-white hover:bg-gray-900 hover:text-white transition-colors duration-200"
-    >
-      {connected
-        ? `${publicKey?.toBase58().slice(0, 4)}...${publicKey?.toBase58().slice(-4)}`
-        : "Connect Wallet"}
-    </Button>
-  );
-}
+    const handleWalletClick = () => {
+        if (!connected) {
+            console.log('Opening wallet modal...');
+            setVisible(true);
+        } else {
+            console.log('Disconnecting wallet...');
+            disconnect().catch((error) => {
+                console.error('Failed to disconnect:', error);
+                toast.error('Failed to disconnect. Please try again.');
+            });
+        }
+    };
 
+    const copyAddress = async () => {
+        if (publicKey) {
+            try {
+                await navigator.clipboard.writeText(publicKey.toBase58());
+                setCopying(true);
+                toast.success('Address copied to clipboard!');
+                setTimeout(() => setCopying(false), 1500);
+            } catch (error) {
+                console.error('Failed to copy address:', error);
+                toast.error('Failed to copy address. Please try again.');
+            }
+        }
+    };
+
+    return (
+        <div className="flex justify-center items-center space-x-4 py-4">
+            {/* Connect/Disconnect Button */}
+            <Button
+                onClick={handleWalletClick}
+                variant="outline"
+                className="bg-black text-white hover:bg-gray-100"
+                disabled={connecting}
+            >
+                {connecting ? 'Connecting...' : connected ? 'Disconnect' : 'Connect Wallet'}
+            </Button>
+
+            {/* Display Wallet Address if connected */}
+            {connected && publicKey && (
+                <Button
+                    onClick={copyAddress}
+                    variant="outline"
+                    className="bg-black text-white hover:bg-gray-100"
+                    disabled={copying}
+                >
+                    {copying ? 'Copied!' : `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}`}
+                </Button>
+            )}
+        </div>
+    );
+};

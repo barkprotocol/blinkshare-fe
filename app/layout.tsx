@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import "./styles/globals.css";
@@ -35,7 +36,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }, [privyAppId, router]);
 
   if (isPrivyAppIdMissing) {
-    return null;
+    return (
+      <div className="flex items-center justify-center w-full h-screen">
+        <div>Redirecting to support...</div>
+      </div>
+    );
   }
 
   return (
@@ -53,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <meta property="og:image" content="/assets/og-image.png" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@bark_protocol" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href="https://blinkshare.fun" />
       </Head>

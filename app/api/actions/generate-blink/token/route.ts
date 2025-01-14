@@ -1,103 +1,71 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb/mongodb';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { programs } from '@metaplex/js';
-import { TokenListProvider, TokenInfo } from '@solana/spl-token-registry';
-// eslint-disable-next-line @nx/enforce-module-boundaries
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import { mplCore } from '@metaplex-foundation/mpl-core';
+import { TokenListProvider } from '@solana/spl-token-registry';
 import { getMint } from '@solana/spl-token';
+import { publicKey } from '@metaplex-foundation/umi';
+import {
+  fetchMerkleTree,
+  fetchTreeConfigFromSeeds,
+} from '@metaplex-foundation/mpl-bubblegum';
 
-const { metadata: { Metadata } } = programs;
+// Create Umi instance
+const umi = createUmi(process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com').use(mplCore());
+const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com');
 
-const connection = new Connection('https://api.mainnet-beta.solana.com');
-
-export async function GET(req: Request) {
+// Fetch token metadata using Metaplex
+async function fetchTokenMetadata(mintAddress: PublicKey) {
   try {
-    // Extract mint address from URL query parameters
-    const { searchParams } = new URL(req.url);
-    const mint = searchParams.get('mint'); // Get the "mint" query parameter
-
-    if (!mint) {
-      return NextResponse.json({ error: 'Mint address is required' }, { status: 400 });
-    }
-
-    const mintAddress = new PublicKey(mint);
-    let tokenMetadata;
-    try {
-      const metadataPDA = await Metadata.getPDA(mintAddress);
-      tokenMetadata = await Metadata.load(connection, metadataPDA);
-    } catch (error) {
-      console.log('Error fetching token metadata:', error);
-      // return NextResponse.json({ error: 'Failed to fetch token metadata' }, { status: 500 });
-    }
-
-    if(!tokenMetadata || !tokenMetadata.data || !tokenMetadata.data.data ||!tokenMetadata.data.data.uri){
-      try{
-        const tokenInfo = await getTokenInfoFromRegistry(mint);
-        const icon = tokenInfo.image;
-        const title = "BUY " + tokenInfo.name;
-        const retPayLoad = { icon, title };
-        return NextResponse.json(retPayLoad);
-      } catch (error) {
-        console.log('Error fetching data:', error);
-        return NextResponse.json({ error: 'Token Info not found' }, { status: 500 });
-      }
-    }
-
-
-    const tokenName = tokenMetadata.data.data.name;
-    const tokenUri = tokenMetadata.data.data.uri;
-
-    let tokenJson;
-    try {
-      const response = await fetch(tokenUri);
-      tokenJson = await response.json();
-      console.log(tokenJson);
-    } catch (error) {
-      console.log('Error fetching token metadata JSON:', error);
-      return NextResponse.json({ error: 'Failed to fetch token metadata JSON' }, { status: 500 });
-    }
-
-    const icon = tokenJson.image;
-    const title = "BUY " + tokenName;
-
-    const retPayLoad = { icon, title };
-    return NextResponse.json(retPayLoad);
-
+    const { metadata: { Metadata } } = await import('@metaplex-foundation/mpl-token-metadata');
+    const metadataPDA = await Metadata.getPDA(mintAddress);
+    const tokenMetadata = await Metadata.load(connection, metadataPDA);
+    return tokenMetadata?.data?.data || null;
   } catch (error) {
-    console.log('Error fetching data:', error);
-    return NextResponse.json({ error: 'Invalid mint' }, { status: 500 });
+    console.error('Error fetching token metadata:', error);
+    return null;
   }
 }
 
-async function getTokenInfoFromRegistry(mintAddress: string) {
-  console.log('Fetching token info from registry');
+// Fetch token information from the SPL Token Registry
+async function fetchTokenInfoFromRegistry(mintAddress: string) {
   const tokenList = await new TokenListProvider().resolve();
   const tokens = tokenList.getList();
-
-  // Find token by mint address
   const tokenInfo = tokens.find((t) => t.address === mintAddress);
-  if (!tokenInfo) {
-      throw new Error('Token not found in registry');
-  }
-
-  console.log(`Token Name: ${tokenInfo.name}`);
-  console.log(`Token Image: ${tokenInfo.logoURI}`);
+  if (!tokenInfo) throw new Error('Token not found in registry');
   return { name: tokenInfo.name, image: tokenInfo.logoURI };
 }
 
+// Handle GET requests
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const mint = searchParams.get('mint');
+    if (!mint) return NextResponse.json({ error: 'Mint address is required' }, { status: 400 });
 
+    const mintAddress = new PublicKey(mint);
+    const metadata = await fetchTokenMetadata(mintAddress);
+
+    if (!metadata || !metadata.uri) {
+      const tokenInfo = await fetchTokenInfoFromRegistry(mint);
+      return NextResponse.json({ icon: tokenInfo.image, title: `BUY ${tokenInfo.name}` });
+    }
+
+    const response = await fetch(metadata.uri);
+    const tokenJson = await response.json();
+    return NextResponse.json({ icon: tokenJson.image, title: `BUY ${metadata.name}` });
+  } catch (error) {
+    console.error('GET Error:', error);
+    return NextResponse.json({ error: 'Invalid mint address or metadata unavailable' }, { status: 500 });
+  }
+}
+
+// Handle POST requests
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
-    console.log('Raw request body:', rawBody);
-
-    let data;
-    try {
-      data = JSON.parse(rawBody);
-    } catch (parseError) {
-      console.log('Error parsing JSON:', parseError);
-      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
-    }
+    const data = JSON.parse(rawBody);
 
     const { label, description, wallet, mint, commission, percentage } = data;
     if (!label || !description || !wallet || !mint) {
@@ -106,69 +74,40 @@ export async function POST(req: Request) {
 
     const mintAddress = new PublicKey(mint);
     const mintInfo = await getMint(connection, mintAddress);
+    if (!mintInfo?.decimals) throw new Error('Invalid mint: missing token decimals');
 
-    console.log(mintInfo);
-    const decimals = mintInfo.decimals;
-    if(!decimals){
-      throw new Error('Invalid mint, missing token decimals');
+    const metadata = await fetchTokenMetadata(mintAddress);
+    let tokenName, tokenJson;
+
+    if (!metadata || !metadata.uri) {
+      const tokenInfo = await fetchTokenInfoFromRegistry(mint);
+      tokenName = tokenInfo.name;
+      tokenJson = { image: tokenInfo.image };
+    } else {
+      const response = await fetch(metadata.uri);
+      tokenJson = await response.json();
+      tokenName = metadata.name;
     }
-
-    let tokenMetadata;
-    try {
-      const metadataPDA = await Metadata.getPDA(mintAddress);
-      tokenMetadata = await Metadata.load(connection, metadataPDA);
-    } catch (error) {
-      console.log('Error fetching token metadata:', error);
-      return NextResponse.json({ error: 'Failed to fetch token metadata' }, { status: 500 });
-    }
-
-    let tokenName = tokenMetadata.data.data.name;
-    const tokenUri = tokenMetadata.data.data.uri;
-
-
-    let tokenJson;
-    if(!tokenMetadata || !tokenMetadata.data || !tokenMetadata.data.data ||!tokenMetadata.data.data.uri){
-      try{
-        const tokenInfo = await getTokenInfoFromRegistry(mint);
-        tokenJson = { image: tokenInfo.image, name: tokenInfo.name };
-        tokenName = tokenInfo.name;
-      } catch (error) {
-        console.log('Error fetching data:', error);
-        return NextResponse.json({ error: 'Token Info not found' }, { status: 500 });
-      }
-    }else{
-      try {
-        const response = await fetch(tokenUri);
-        tokenJson = await response.json();
-      } catch (error) {
-        console.log('Error fetching token metadata JSON:', error);
-        return NextResponse.json({ error: 'Failed to fetch token metadata JSON' }, { status: 500 });
-      }
-    }
-
-    const icon = tokenJson.image;
-    const title = "BUY " + tokenName;
 
     const client = await clientPromise;
-    const db = client.db("Cluster0");
-
-    const result = await db.collection("blinks").insertOne({
-      icon,
+    const db = client.db('Cluster0');
+    const result = await db.collection('blinks').insertOne({
+      icon: tokenJson.image,
       label,
       description,
-      title,
+      title: `BUY ${tokenName}`,
       wallet,
       mint,
       commission,
       percentage,
-      decimals,
-      createdAt: new Date()
+      decimals: mintInfo.decimals,
+      createdAt: new Date(),
     });
-    console.log(result.insertedId);
-    const blinkLink = `https://blinkshare.fun/api/actions/tokens/${result.insertedId}`;
+
+    const blinkLink = `${process.env.NEXT_PUBLIC_BLINK_URL || 'https://blinkshare.fun'}/api/actions/tokens/${result.insertedId}`;
     return NextResponse.json({ blinkLink });
   } catch (error) {
-    console.log('Error generating blink:', error);
+    console.error('POST Error:', error);
     return NextResponse.json({ error: 'Failed to generate blink' }, { status: 500 });
   }
 }

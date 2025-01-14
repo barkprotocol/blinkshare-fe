@@ -6,28 +6,19 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/ui/wallet-button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Store, PlusSquare, User, ChevronDown } from 'lucide-react';
+import { Home, Store, User } from 'lucide-react';
 import { FaDiscord } from 'react-icons/fa';
 
-// Navbar items
 const navItems = [
   { href: "/", icon: Home, label: "Home" },
-  {
-    label: "Products",
-    icon: Store,
-    subItems: [
-      { href: "/blinks", icon: PlusSquare, label: "Create Blinks" },
-      { href: "/servers", icon: Store, label: "Marketplace" },
-      { href: "/my-blinks", icon: User, label: "My Blinks" },
-    ],
-  },
+  { href: "/servers", icon: Store, label: "Marketplace" },
   { href: "https://discord.gg/invite/CjUeKEB7b6", icon: FaDiscord, label: "Discord" },
+  { href: "/blinks", icon: User, label: "Blinks" },
 ];
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   // Scroll effect for navbar
   useEffect(() => {
@@ -40,14 +31,7 @@ export default function Navbar() {
   }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-    setActiveDropdown(null);
-  };
-
-  const toggleDropdown = (label: string) => {
-    setActiveDropdown(activeDropdown === label ? null : label);
-  };
+  const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <header className={`w-full py-4 px-6 fixed top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-black/80 backdrop-blur-sm' : 'bg-transparent'}`}>
@@ -69,39 +53,14 @@ export default function Navbar() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex flex-grow justify-center space-x-6">
           {navItems.map((item) => (
-            <div key={item.label} className="relative group">
-              {item.href ? (
-                <Link 
-                  href={item.href} 
-                  className="text-[#DBCFC7]/80 hover:text-[#DBCFC7] flex items-center space-x-2 transition-colors duration-200"
-                >
-                  <item.icon size={20} /> <span>{item.label}</span>
-                </Link>
-              ) : (
-                <button
-                  onClick={() => toggleDropdown(item.label)}
-                  className="text-[#DBCFC7]/80 hover:text-[#DBCFC7] flex items-center space-x-2 transition-colors duration-200"
-                >
-                  <item.icon size={20} /> <span>{item.label}</span> <ChevronDown size={16} />
-                </button>
-              )}
-              {item.subItems && (
-                <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="py-1">
-                    {item.subItems.map((subItem) => (
-                      <Link
-                        key={subItem.href}
-                        href={subItem.href}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <subItem.icon size={16} className="inline-block mr-2" />
-                        {subItem.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <Link 
+              key={item.href}
+              href={item.href} 
+              className="text-[#DBCFC7]/80 hover:text-[#DBCFC7] flex items-center space-x-2 transition-colors duration-200"
+              onClick={closeMenu}
+            >
+              <item.icon size={20} /> <span>{item.label}</span>
+            </Link>
           ))}
         </nav>
 
@@ -146,44 +105,14 @@ export default function Navbar() {
             className="md:hidden bg-black/90 text-white p-4 space-y-4"
           >
             {navItems.map((item) => (
-              <div key={item.label}>
-                {item.href ? (
-                  <Link 
-                    href={item.href} 
-                    className="block flex items-center space-x-2 py-2 transition-colors duration-200 hover:text-white"
-                    onClick={closeMenu}
-                  >
-                    <item.icon size={20} /> <span>{item.label}</span>
-                  </Link>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => toggleDropdown(item.label)}
-                      className="w-full text-left flex items-center justify-between py-2 transition-colors duration-200 hover:text-white"
-                    >
-                      <span className="flex items-center space-x-2">
-                        <item.icon size={20} /> <span>{item.label}</span>
-                      </span>
-                      <ChevronDown size={16} className={`transform transition-transform ${activeDropdown === item.label ? 'rotate-180' : ''}`} />
-                    </button>
-                    {activeDropdown === item.label && item.subItems && (
-                      <div className="pl-6 mt-2 space-y-2">
-                        {item.subItems.map((subItem) => (
-                          <Link
-                            key={subItem.href}
-                            href={subItem.href}
-                            className="block py-1 transition-colors duration-200 hover:text-white"
-                            onClick={closeMenu}
-                          >
-                            <subItem.icon size={16} className="inline-block mr-2" />
-                            {subItem.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              <Link 
+                key={item.href}
+                href={item.href} 
+                className="block flex items-center space-x-2 py-2 transition-colors duration-200 hover:text-white"
+                onClick={closeMenu}
+              >
+                <item.icon size={20} /> <span className="hidden md:inline">{item.label}</span>
+              </Link>
             ))}
             <div className="pt-4">
               <WalletButton />
@@ -197,4 +126,3 @@ export default function Navbar() {
     </header>
   );
 }
-
