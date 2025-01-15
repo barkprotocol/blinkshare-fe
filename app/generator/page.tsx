@@ -1,135 +1,293 @@
-"use client";
+'use client'
 
-import React, { useState } from "react";
-import "./style.css";
+import { useState, useCallback, useEffect } from "react"
+import { useRouter } from 'next/navigation'
+import { useWallet } from "@solana/wallet-adapter-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Form } from "@/components/blink/form"
+import { BlinkPreview } from "@/components/blink/blink-preview"
+import { BlinkData, BlinkType, ButtonType, Currency } from "@/app/types/blink"
+import { SocialShare } from "@/components/blink/social-share"
+import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { InfoCard } from "@/components/blink/info-card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ColorPicker } from "@/components/ui/color-picker"
 
-const BlinkSharePlugin = () => {
-  const [formData, setFormData] = useState({
-    title: "",
-    label: "",
-    description: "",
-    image: null as File | null,
-    textPosition: "left",
-    bgColor: "#ffffff",
-    donationAmount: "0.1",
-    donationLink: "",
-  });
+const defaultBlinkData: Partial<BlinkData> = {
+  icon: '',
+  label: 'Your Label',
+  description: 'Your Description shows up here. Keep it short and simple',
+  title: 'Your Title :)',
+  titleDescription: 'A short description of your title',
+  type: 'NFT',
+  font: 'Inter',
+  backgroundColor: '#ffffff',
+  fontColor: '#000000',
+  cardBackgroundColor: '#f3f4f6',
+  backgroundImage: null,
+  buttonOptions: {
+    type: 'none',
+    amount: '',
+    currency: 'SOL',
+  },
+}
 
-  const [loading, setLoading] = useState(false);
+const fontOptions = [
+  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Oswald', 'Raleway', 'Ubuntu'
+]
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { id, value } = e.target;
-    setFormData((prevState) => ({
-      ...prevState,
-      [id]: value,
-    }));
-  };
+export default function BlinkGeneratorPage() {
+  const [blinkData, setBlinkData] = useState<Partial<BlinkData>>(defaultBlinkData)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatedBlinkId, setGeneratedBlinkId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
+  const { publicKey, connected } = useWallet()
+  const router = useRouter()
+  const { toast } = useToast()
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files ? e.target.files[0] : null;
-    setFormData((prevState) => ({
-      ...prevState,
-      image: file,
-    }));
-  };
+  const handleBlinkDataChange = useCallback((newData: Partial<BlinkData>) => {
+    setBlinkData(prevData => ({ ...prevData, ...newData }))
+  }, [])
 
-  const handleDownload = () => {
-    if (!formData.title || !formData.label || !formData.description || !formData.image) {
-      alert("Please fill in all required fields and upload an image.");
-      return;
+  const handleGenerate = async () => {
+    if (!connected || !publicKey) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet to create a Blink.",
+        variant: "destructive",
+      })
+      return
     }
 
-    setLoading(true); // Show loading
-    const { title, label, description, image, bgColor } = formData;
+    setIsGenerating(true)
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    try {
+      const blinkToGenerate: Partial<BlinkData> = {
+        ...blinkData,
+        wallet: publicKey.toString(),
+        created_at: new Date().toISOString(),
+      }
 
-    if (!ctx) return;
+      const response = await fetch('/api/actions/generate-blink', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(blinkToGenerate),
+      })
 
-    const img = new Image();
-    img.src = URL.createObjectURL(image!);
+      if (!response.ok) {
+        throw new Error('Failed to create Blink')
+      }
 
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
+      const data = await response.json()
+      toast({
+        title: "Blink created",
+        description: "Your Blink has been successfully created.",
+      })
+      setGeneratedBlinkId(data.blinkId)
+      setActiveTab('preview')
+    } catch (error) {
+      console.error('Error creating Blink:', error)
+      toast({
+        title: "Error",
+        description: "Failed to create Blink. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
+  const handleReset = useCallback(() => {
+    setBlinkData(defaultBlinkData)
+    setGeneratedBlinkId(null)
+    setActiveTab('edit')
+    toast({
+      title: "Reset",
+      description: "Blink data has been reset.",
+    })
+  }, [toast])
 
-      ctx.font = "30px Arial";
-      ctx.fillStyle = "black";
-      ctx.textAlign = formData.textPosition as CanvasTextAlign;
+  const handleSendSolanaBlink = useCallback(async () => {
+    if (!connected || !publicKey) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet to send a Solana Blink.",
+        variant: "destructive",
+      })
+      return
+    }
 
-      ctx.fillText(title, canvas.width / 2, 50);
-      ctx.fillText(label, canvas.width / 2, 100);
-      ctx.fillText(description, canvas.width / 2, 150);
+    // Implement Solana Blink sending logic here
+    toast({
+      title: "Sending Solana Blink",
+      description: "This feature is not yet implemented.",
+    })
+  }, [connected, publicKey, toast])
 
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = "blink-image.png";
-      link.click();
+  const handleRandomize = useCallback(() => {
+    const randomColor = () => `#${Math.floor(Math.random()*16777215).toString(16)}`
+    const randomFont = fontOptions[Math.floor(Math.random() * fontOptions.length)]
+    
+    setBlinkData(prevData => ({
+      ...prevData,
+      backgroundColor: randomColor(),
+      fontColor: randomColor(),
+      cardBackgroundColor: randomColor(),
+      font: randomFont,
+    }))
+  }, [])
 
-      setLoading(false);
-    };
-  };
+  useEffect(() => {
+    if (generatedBlinkId) {
+      setActiveTab('preview')
+    }
+  }, [generatedBlinkId])
 
   return (
-    <div
-      id="webcrumbs"
-      className="bg-gray-100 dark:bg-black min-h-screen flex flex-col justify-center items-center py-12"
-    >
-      <div className="w-[1200px] bg-white dark:bg-neutral-800 rounded-lg shadow-lg">
-        <div className="min-h-[800px] flex flex-col items-center px-12 py-20">
-          <header className="text-center mb-20">
-            <h1 className="text-4xl font-title text-neutral-950 dark:text-white">Create and Preview Your Blink</h1>
-            <p className="text-lg text-neutral-500 dark:text-neutral-300 mt-2">
-              Customize your Blink with the options below, and instantly see your changes in the preview.
-            </p>
-          </header>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 w-full max-w-[1000px]">
-            {/* Form Section */}
-            <section className="bg-neutral-50 dark:bg-neutral-700 p-8 rounded-md space-y-8">
-              <h2 className="text-2xl font-semibold text-neutral-950 dark:text-white text-center mb-6">Customization Form</h2>
-              <form className="space-y-6">
-                {/* Form Fields */}
-                <div>
-                  <label htmlFor="title" className="block text-lg text-neutral-700 dark:text-neutral-200">Title</label>
-                  <input
-                    id="title"
-                    type="text"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    className="w-full mt-2 p-3 bg-neutral-100 dark:bg-neutral-600 rounded-md border border-neutral-300 dark:border-neutral-500"
-                    placeholder="Enter your title here"
-                  />
-                </div>
-                {/* More fields... */}
-              </form>
-            </section>
-            {/* Live Preview Section */}
-            <section className="bg-neutral-50 dark:bg-neutral-700 p-8 rounded-md space-y-8">
-              <h2 className="text-2xl font-semibold text-neutral-950 dark:text-white text-center mb-6">Live Preview</h2>
-              <div className="w-full h-[400px] bg-neutral-200 dark:bg-neutral-600 rounded-md flex items-center justify-center">
-                {formData.image ? (
-                  <img
-                    src={URL.createObjectURL(formData.image)}
-                    alt="Preview"
-                    className="w-full h-full object-contain shadow-md"
-                  />
-                ) : (
-                  <span className="text-neutral-500 dark:text-neutral-300">Preview Area</span>
-                )}
-              </div>
-            </section>
-          </div>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12">
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 text-center mb-2">Design Your Blink</h2>
+        <p className="text-lg text-center text-gray-600 dark:text-gray-400 mb-6">
+          Customize your Blink for NFTs, gifts, or payments with our advanced generator
+        </p>
+        <div className="flex justify-center space-x-4 mb-8">
+          <Button
+            onClick={() => router.push('/wallet')}
+            variant="outline"
+            className="bg-white dark:bg-gray-800 text-black dark:text-white border-2 border-black dark:border-white"
+          >
+            Wallet
+          </Button>
+          <Button 
+            onClick={handleReset} 
+            variant="outline" 
+            className="bg-white dark:bg-gray-800 text-black dark:text-white border-2 border-black dark:border-white"
+          >
+            Reset
+          </Button>
+          <Button
+            onClick={handleSendSolanaBlink}
+            variant="outline"
+            className="bg-white dark:bg-gray-800 text-black dark:text-white border-2 border-black dark:border-white"
+          >
+            Send Blink
+          </Button>
+          <Button
+            onClick={handleRandomize}
+            variant="outline"
+            className="bg-white dark:bg-gray-800 text-black dark:text-white border-2 border-black dark:border-white"
+          >
+            Randomize
+          </Button>
         </div>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'edit' | 'preview')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="edit">Edit</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+          <TabsContent value="edit">
+            <Card className="bg-white dark:bg-gray-800">
+              <CardContent className="p-6">
+                <Form 
+                  blinkData={blinkData} 
+                  onBlinkDataChange={handleBlinkDataChange}
+                  onGenerate={handleGenerate}
+                  isGenerating={isGenerating}
+                  connected={connected}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Label htmlFor="font">Font</Label>
+                    <Select
+                      value={blinkData.font}
+                      onValueChange={(value) => handleBlinkDataChange({ font: value })}
+                    >
+                      <SelectTrigger id="font">
+                        <SelectValue placeholder="Select font" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fontOptions.map((font) => (
+                          <SelectItem key={font} value={font}>{font}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="cardBackgroundColor">Card Background Color</Label>
+                    <ColorPicker
+                      color={blinkData.cardBackgroundColor || '#ffffff'}
+                      onChange={(color) => handleBlinkDataChange({ cardBackgroundColor: color })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="backgroundColor">Background Color</Label>
+                    <ColorPicker
+                      color={blinkData.backgroundColor || '#ffffff'}
+                      onChange={(color) => handleBlinkDataChange({ backgroundColor: color })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="fontColor">Font Color</Label>
+                    <ColorPicker
+                      color={blinkData.fontColor || '#000000'}
+                      onChange={(color) => handleBlinkDataChange({ fontColor: color })}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="backgroundOpacity">Background Opacity</Label>
+                    <Slider
+                      id="backgroundOpacity"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={[parseInt(blinkData.backgroundOpacity?.toString() || '100')]}
+                      onValueChange={(value) => handleBlinkDataChange({ backgroundOpacity: value[0] })}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="enableAnimation" className="flex items-center space-x-2">
+                      <Switch
+                        id="enableAnimation"
+                        checked={blinkData.enableAnimation || false}
+                        onCheckedChange={(checked) => handleBlinkDataChange({ enableAnimation: checked })}
+                      />
+                      <span>Enable Animation</span>
+                    </Label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="preview">
+            <Card className="bg-white dark:bg-gray-800" style={{ backgroundColor: blinkData.cardBackgroundColor }}>
+              <CardContent className="p-6">
+                <BlinkPreview {...blinkData} />
+              </CardContent>
+            </Card>
+            {generatedBlinkId && (
+              <Card className="bg-white dark:bg-gray-800 mt-8">
+                <CardContent className="p-6">
+                  <SocialShare blinkId={generatedBlinkId} />
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+        <Card className="bg-white dark:bg-gray-800 mt-8">
+          <CardContent className="p-6">
+            <InfoCard />
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default BlinkSharePlugin;

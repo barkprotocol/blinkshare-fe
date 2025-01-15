@@ -6,13 +6,14 @@ const getToken = (): string | null => {
   const token = useUserStore.getState().token;
   
   // Check if token is a valid string, otherwise return null
-  if (typeof token === 'string' && token) {
+  if (typeof token === 'string' && token.trim() !== '') {
     return token;
   }
 
   // Fallback to retrieving token from localStorage if it's not available in the store
   if (typeof window !== "undefined") {
-    return localStorage.getItem("discordToken");
+    const localToken = localStorage.getItem("discordToken");
+    return localToken && localToken.trim() !== '' ? localToken : null;
   }
 
   return null;
@@ -25,14 +26,12 @@ export const fetchRoles = async (
   const token = getToken();
 
   if (!token) {
-    console.error("No authorization token found.");
-    return { roles: [], blinkShareRolePosition: -1 };
+    throw new Error("No authorization token found.");
   }
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!apiBaseUrl) {
-    console.error("API base URL is missing.");
-    return { roles: [], blinkShareRolePosition: -1 };
+    throw new Error("API base URL is missing.");
   }
 
   try {
@@ -45,18 +44,13 @@ export const fetchRoles = async (
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(
-        `Failed to fetch roles for guild ${guildId}: ${response.status} - ${response.statusText}`,
-        errorText
-      );
-      return { roles: [], blinkShareRolePosition: -1 };
+      throw new Error(`Failed to fetch roles for guild ${guildId}: ${response.status} - ${response.statusText}. ${errorText}`);
     }
 
     const data = await response.json();
 
     if (!Array.isArray(data.roles)) {
-      console.error("Invalid response format: 'roles' is not an array.");
-      return { roles: [], blinkShareRolePosition: -1 };
+      throw new Error("Invalid response format: 'roles' is not an array.");
     }
 
     return {
@@ -65,7 +59,7 @@ export const fetchRoles = async (
     };
   } catch (error) {
     console.error(`Error fetching roles for guild ${guildId}`, error);
-    return { roles: [], blinkShareRolePosition: -1 };
+    throw error;
   }
 };
 
@@ -74,11 +68,10 @@ export const createEmbeddedWallet = async (
   accessToken: string,
   discordUserId: string,
   address: string
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<void> => {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!apiBaseUrl) {
-    console.error("API base URL is missing.");
-    return { success: false, error: "API base URL is not configured." };
+    throw new Error("API base URL is not configured.");
   }
 
   try {
@@ -97,16 +90,11 @@ export const createEmbeddedWallet = async (
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error(
-        `Failed to create embedded wallet: ${response.status} - ${response.statusText}`,
-        errorData
-      );
-      return { success: false, error: errorData.error || "Unknown error occurred." };
+      throw new Error(`Failed to create embedded wallet: ${response.status} - ${response.statusText}. ${errorData.error || "Unknown error occurred."}`);
     }
-
-    return { success: true };
   } catch (error) {
     console.error(`Error creating embedded wallet`, error);
-    return { success: false, error: `${error}` };
+    throw error;
   }
 };
+

@@ -1,63 +1,55 @@
-import { useState } from "react"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from 'next/link'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Check, Copy, Twitter } from 'lucide-react'
+import { Eye, Lock, Coins } from 'lucide-react'
+
+interface Blink {
+  id: string
+  title: string
+  description: string
+  privateKey: boolean
+  mint: boolean
+}
 
 interface BlinkCardProps {
-  blink: {
-    _id: string
-    title: string
-    description: string
-    privateKey: boolean
-    mint: boolean
-  }
+  blink: Blink
 }
 
 export function BlinkCard({ blink }: BlinkCardProps) {
-  const [copied, setCopied] = useState(false)
-  const blinkLink = `https://dial.to/${blink.privateKey ? 'devnet' : ''}?action=solana-action:${blink._id}`
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(blinkLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const handleTweet = () => {
-    const tweetText = `Check out this Blink I just made @blinksharedotfun: ${blinkLink}`
-    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank')
-  }
-
   return (
-    <Card className="overflow-hidden border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="bg-gray-50 dark:bg-gray-800">
-        <CardTitle className="text-lg font-semibold text-gray-800 dark:text-gray-200">{blink.title}</CardTitle>
+    <Card className="flex flex-col h-full">
+      <CardHeader>
+        <CardTitle className="text-xl font-semibold">{blink.title}</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground line-clamp-2">
+          {blink.description}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="p-4">
-        <p className="text-sm text-gray-600 dark:text-gray-300">{blink.description || "No description provided."}</p>
+      <CardContent className="flex-grow">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            {blink.privateKey ? (
+              <Lock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {blink.privateKey ? 'Private' : 'Public'}
+            </span>
+          </div>
+          {blink.mint && (
+            <div className="flex items-center space-x-2">
+              <Coins className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <span className="text-sm text-muted-foreground">Mintable</span>
+            </div>
+          )}
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-between bg-gray-100 dark:bg-gray-700 p-4">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" onClick={handleCopy} className="bg-white dark:bg-gray-800">
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{copied ? "Copied!" : "Copy link"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <Button variant="outline" size="icon" onClick={handleTweet} className="bg-white dark:bg-gray-800">
-          <Twitter className="h-4 w-4" />
-        </Button>
-        <Button asChild className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
-          <a href={blinkLink} target="_blank" rel="noopener noreferrer">
-            {blink.mint ? "Tokens" : blink.privateKey ? "Gamble" : "Donate"}
-          </a>
-        </Button>
+      <CardFooter>
+        <Link href={`/blinks/${blink.id}`} passHref legacyBehavior>
+          <Button variant="default" className="w-full" asChild>
+            <a>View Blink</a>
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   )

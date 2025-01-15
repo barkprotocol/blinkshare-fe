@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Blink, BlinkType } from "@/lib/types/blink"
 import { useWallet } from "@solana/wallet-adapter-react"
-import { createBlink } from "@/lib/actions/create-a-blink"
+import { createBlink } from "@/lib/actions/blink-actions"
 import { toast } from "sonner"
 
 export function useBlinkGenerator() {

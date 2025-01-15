@@ -22,7 +22,7 @@ export function CTA() {
           Start using BlinkShare today and revolutionize your Discord server's engagement.
         </p>
         <Button size="lg" variant="secondary">
-          <Link href="/create-blink">
+          <Link href="/generator">
             Create Your Blink Now
           </Link>
         </Button>

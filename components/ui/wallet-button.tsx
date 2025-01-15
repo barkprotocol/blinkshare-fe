@@ -22,7 +22,7 @@ export const WalletButton: FC = () => {
     const handleWalletClick = () => {
         if (!connected) {
             console.log('Opening wallet modal...');
-            setVisible(true);
+            setVisible(true); // Open wallet modal if not connected
         } else {
             console.log('Disconnecting wallet...');
             disconnect().catch((error) => {

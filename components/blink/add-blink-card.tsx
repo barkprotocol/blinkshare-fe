@@ -22,4 +22,3 @@ export function AddBlinkCard({ onAdd }: AddBlinkCardProps) {
     </Card>
   )
 }
-

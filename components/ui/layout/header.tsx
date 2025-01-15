@@ -4,8 +4,8 @@ import Navbar from '@/components/ui/layout/navbar';
 
 export function Header() {
   return (
-    <header className="bg-black dark:bg-semi-transparent shadow-md">
-      <div className="max-w-screen-xl mx-auto px-4 py-0 flex justify-center items-center">
+    <header className="bg-transparent dark:bg-transparent shadow-md">
+      <div className="max-w-10xl mx-auto px-0 py-0">
         <Navbar />
       </div>
     </header>

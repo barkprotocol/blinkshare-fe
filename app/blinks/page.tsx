@@ -1,56 +1,43 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/router"
-import { useWallet } from "@solana/wallet-adapter-react"
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
+import { useState, useEffect } from 'react'
 import { BlinkCard } from "@/components/blink/blink-card"
-import { AddBlinkCard } from "@/components/blink/add-blink-card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { toast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface Blink {
-  _id: string
+  id: string
   title: string
   description: string
   privateKey: boolean
   mint: boolean
 }
 
-export default function MyBlinksPage() {
-  const { publicKey, connected } = useWallet()
+export default function BlinksList() {
   const [blinks, setBlinks] = useState<Blink[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
-    document.title = "My Blinks - BlinkShare"
-    if (connected && publicKey) {
-      fetchBlinks()
-    } else {
-      setBlinks([])
-      setLoading(false)
-    }
-  }, [connected, publicKey])
+    fetchBlinks()
+  }, [])
 
   const fetchBlinks = async () => {
-    if (!publicKey) return
-
     try {
       setLoading(true)
-      setError(false)
-      const response = await fetch(`/api/actions/get-blinks?wallet=${publicKey.toString()}`)
-
+      setError(null)
+      const response = await fetch('/api/actions/get-blinks')
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`)
       }
-
       const data = await response.json()
       setBlinks(data.blinks || [])
     } catch (error) {
       console.error("Error fetching blinks:", error)
-      setError(true)
+      setError('Failed to fetch blinks. Please try again later.')
       toast({
         title: "Error",
         description: "Failed to fetch blinks. Please try again later.",
@@ -61,75 +48,55 @@ export default function MyBlinksPage() {
     }
   }
 
-  return (
-    <div className="container mx-auto px-4 py-20">
-      <div className="flex flex-col items-center mt-16 mb-12">
-        <h1 className="text-4xl font-bold text-center mb-4">Your Blinks</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300 text-center mb-8">
-          View and manage your blinks below
-        </p>
-        {!connected && (
-          <div className="text-center">
-            <p className="mb-4 text-gray-600 dark:text-gray-300">
-              Connect your wallet to view your Blinks
-            </p>
-            <WalletMultiButton className="!bg-black !text-white hover:!bg-gray-800 dark:!bg-white dark:!text-black dark:hover:!bg-gray-200" />
-          </div>
-        )}
-        {/* Buttons for My Blinks and Blink Generator */}
-        <div className="mt-8 flex space-x-4">
-          <button
-            onClick={() => router.push("/my-blinks")}
-            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none transition"
-            aria-label="Navigate to My Blinks"
-          >
-            My Blinks
-          </button>
-          <button
-            onClick={() => router.push("/blink-generator")}
-            className="px-6 py-2 bg-white text-black border border-black rounded-lg hover:bg-gray-100 focus:outline-none transition"
-            aria-label="Navigate to Blink Generator"
-          >
-            Blink Generator
-          </button>
-        </div>
-      </div>
+  if (loading) {
+    return (
+      <Card className="w-full max-w-md mx-auto mt-8">
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <span>Loading blinks...</span>
+        </CardContent>
+      </Card>
+    )
+  }
 
-      {connected && (
-        <>
-          {loading ? (
-            <>
-              <p className="text-center text-gray-500">Loading your blinks...</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, index) => (
-                  <Skeleton key={index} className="h-48" />
-                ))}
-              </div>
-            </>
-          ) : error ? (
-            <div className="text-center">
-              <p className="text-red-500">Failed to load blinks. Please try again.</p>
-              <button
-                onClick={fetchBlinks}
-                className="mt-4 px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
-              >
-                Retry
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blinks.length > 0 ? (
-                blinks.map((blink) => <BlinkCard key={blink._id} blink={blink} />)
-              ) : (
-                <p className="col-span-full text-center text-gray-500 dark:text-gray-400">
-                  No Blinks found
-                </p>
-              )}
-              <AddBlinkCard onAdd={fetchBlinks} />
-            </div>
-          )}
-        </>
-      )}
+  if (error) {
+    return (
+      <Card className="w-full max-w-md mx-auto mt-8">
+        <CardHeader>
+          <CardTitle className="text-center text-destructive">Error</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="mb-4">{error}</p>
+          <Button onClick={fetchBlinks} variant="default">
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (blinks.length === 0) {
+    return (
+      <Card className="w-full max-w-md mx-auto mt-8">
+        <CardContent className="text-center py-8">
+          <p className="text-muted-foreground">No blinks found.</p>
+          <Button onClick={() => window.location.href = '/blink-generator'} variant="default" className="mt-4">
+            Create a Blink
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6 text-center">Your Blinks</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {blinks.map((blink) => (
+          <BlinkCard key={blink.id} blink={blink} />
+        ))}
+      </div>
     </div>
   )
 }
+

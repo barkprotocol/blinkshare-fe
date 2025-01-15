@@ -211,7 +211,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
 const BlinkCard: React.FC<BlinkCardProps> = ({ serverId, code }) => (
   <Card className="w-full h-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
     <CardContent>
-      <BlinkDisplay serverId={serverId} code={code} />
+      <BlinkDisplay blinkId={serverId} />
     </CardContent>
   </Card>
 );

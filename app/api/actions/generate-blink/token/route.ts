@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb/mongodb';
+import { createClient } from '@supabase/supabase-js';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplCore } from '@metaplex-foundation/mpl-core';
@@ -7,8 +7,17 @@ import { TokenListProvider } from '@solana/spl-token-registry';
 import { getMint } from '@solana/spl-token';
 
 // Environment Variables
-const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
-const BLINK_BASE_URL = process.env.NEXT_PUBLIC_BLINK_URL || 'https://blinkshare.fun/generator';
+const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const BLINK_BASE_URL = process.env.NEXT_PUBLIC_BLINK_URL || 'https://blinkshare.fun';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+// Supabase client
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Umi and Solana Connection
 const umi = createUmi(SOLANA_RPC_URL).use(mplCore());
@@ -88,25 +97,33 @@ export async function POST(req: Request) {
       tokenName = metadata.name;
     }
 
-    const client = await clientPromise;
-    const db = client.db('Cluster0');
-    const result = await db.collection('blinks').insertOne({
-      icon: tokenJson.image,
-      label,
-      description,
-      title: `BUY ${tokenName}`,
-      wallet,
-      mint,
-      commission,
-      percentage,
-      decimals: mintInfo.decimals,
-      createdAt: new Date(),
-    });
+    const { data: insertedBlink, error } = await supabase
+      .from('blinks')
+      .insert({
+        icon: tokenJson.image,
+        label,
+        description,
+        title: `BUY ${tokenName}`,
+        wallet,
+        mint,
+        commission,
+        percentage,
+        decimals: mintInfo.decimals,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const blinkLink = `${BLINK_BASE_URL}/api/actions/tokens/${result.insertedId}`;
+    if (error) {
+      console.error('Supabase insertion error:', error);
+      return NextResponse.json({ error: 'Failed to generate blink' }, { status: 500 });
+    }
+
+    const blinkLink = `${BLINK_BASE_URL}/api/actions/tokens/${insertedBlink.id}`;
     return NextResponse.json({ blinkLink });
   } catch (error) {
     console.error('POST Error:', error);
     return NextResponse.json({ error: 'Failed to generate blink' }, { status: 500 });
   }
 }
+

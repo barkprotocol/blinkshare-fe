@@ -1,190 +1,262 @@
-import { useBlinkStore } from "@/hooks/use-store";
+import { useRef, useState } from "react"
+import Image from "next/image"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { BlinkData, BlinkType, ButtonType, Currency, currencyIcons } from "@/types/blink"
+import { useWallet } from "@solana/wallet-adapter-react"
 
-const BlinkForm = () => {
-  const {
-    formData,
-    setFormData,
-    addField,
-    removeField,
-    updateField,
-    resetForm,
-    resetFields,
-  } = useBlinkStore();
+interface BlinkFormProps {
+  blinkData: BlinkData
+  onBlinkDataChange: (newData: Partial<BlinkData>) => void
+  onGenerate: (blinkLink: string) => void
+  connected: boolean
+}
 
-  const handleFieldUpdate = (index: number, key: 'label' | 'value', newValue: string) => {
-    updateField(index, key, newValue);
-  };
+const blinkTypes: BlinkType[] = ['NFT', 'Gift', 'Payment']
+const fontOptions = ['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat']
+const buttonTypes: ButtonType[] = ['none', 'payment', 'donation']
+const currencies: Currency[] = ['SOL', 'USDC', 'BARK']
 
-  const handleInputChange = (key: keyof typeof formData, value: string) => {
-    setFormData(key, value);
-  };
+export function BlinkForm({ blinkData, onBlinkDataChange, onGenerate, connected }: BlinkFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const backgroundInputRef = useRef<HTMLInputElement>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const { publicKey } = useWallet()
+
+  const handleInputChange = (key: keyof BlinkData, value: string | boolean) => {
+    onBlinkDataChange({ [key]: value })
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, key: 'icon' | 'backgroundImage') => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        onBlinkDataChange({ [key]: e.target?.result as string })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleButtonOptionChange = (key: keyof BlinkData['buttonOptions'], value: string) => {
+    onBlinkDataChange({
+      buttonOptions: {
+        ...blinkData.buttonOptions,
+        [key]: value,
+      },
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
+    if (!connected || !publicKey) return
+
+    setIsLoading(true)
     try {
-      // Perform form submission logic
-      console.log("Submitting form data:", formData);
-      // Add any further logic here, e.g., API calls.
+      const response = await fetch('/api/tokens', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          label: blinkData.label,
+          description: blinkData.description,
+          wallet: publicKey.toString(),
+          mint: blinkData.buttonOptions.currency,
+          commission: blinkData.buttonOptions.amount,
+          percentage: false, // You might want to add this as an option in the form
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create Blink')
+      }
+
+      const data = await response.json()
+      onGenerate(data.blinkLink)
     } catch (error) {
-      console.error("Error submitting form:", error);
+      console.error('Error creating Blink:', error)
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Title Field */}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="icon">Icon</Label>
+          <Input
+            id="icon"
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileChange(e, 'icon')}
+            ref={fileInputRef}
+          />
+        </div>
+        <div>
+          <Label htmlFor="type">Type</Label>
+          <Select onValueChange={(value) => handleInputChange('type', value as BlinkType)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              {blinkTypes.map((type) => (
+                <SelectItem key={type} value={type}>{type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       <div>
-        <label htmlFor="title" className="block text-sm font-medium">Title</label>
-        <input
+        <Label htmlFor="title">Title</Label>
+        <Input
           id="title"
-          type="text"
-          value={formData.title}
+          value={blinkData.title}
           onChange={(e) => handleInputChange('title', e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+          placeholder="Enter title"
           required
         />
       </div>
-
-      {/* Description Field */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium">Description</label>
-        <input
+        <Label htmlFor="titleDescription">Title Description</Label>
+        <Input
+          id="titleDescription"
+          value={blinkData.titleDescription}
+          onChange={(e) => handleInputChange('titleDescription', e.target.value)}
+          placeholder="Enter a short description for your title"
+        />
+      </div>
+      <div>
+        <Label htmlFor="label">Label</Label>
+        <Input
+          id="label"
+          value={blinkData.label}
+          onChange={(e) => handleInputChange('label', e.target.value)}
+          placeholder="Enter label"
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Textarea
           id="description"
-          type="text"
-          value={formData.description}
+          value={blinkData.description}
           onChange={(e) => handleInputChange('description', e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+          placeholder="Enter description"
           required
         />
       </div>
-
-      {/* Icon URL Field */}
-      <div>
-        <label htmlFor="iconUrl" className="block text-sm font-medium">Icon URL</label>
-        <input
-          id="iconUrl"
-          type="text"
-          value={formData.iconUrl}
-          onChange={(e) => handleInputChange('iconUrl', e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          required
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="font">Font</Label>
+          <Select onValueChange={(value) => handleInputChange('font', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select font" />
+            </SelectTrigger>
+            <SelectContent>
+              {fontOptions.map((font) => (
+                <SelectItem key={font} value={font}>{font}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="backgroundImage">Background Image</Label>
+          <Input
+            id="backgroundImage"
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileChange(e, 'backgroundImage')}
+            ref={backgroundInputRef}
+          />
+        </div>
       </div>
-
-      {/* Style Preset Field */}
-      <div>
-        <label htmlFor="stylePreset" className="block text-sm font-medium">Style Preset</label>
-        <select
-          id="stylePreset"
-          value={formData.stylePreset}
-          onChange={(e) => handleInputChange('stylePreset', e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          required
-        >
-          <option value="default">Default</option>
-          <option value="dark">Dark</option>
-        </select>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="backgroundColor">Background Color</Label>
+          <Input
+            id="backgroundColor"
+            type="color"
+            value={blinkData.backgroundColor}
+            onChange={(e) => handleInputChange('backgroundColor', e.target.value)}
+            className="h-10 w-full"
+          />
+        </div>
+        <div>
+          <Label htmlFor="fontColor">Font Color</Label>
+          <Input
+            id="fontColor"
+            type="color"
+            value={blinkData.fontColor}
+            onChange={(e) => handleInputChange('fontColor', e.target.value)}
+            className="h-10 w-full"
+          />
+        </div>
       </div>
-
-      {/* Server ID Field */}
       <div>
-        <label htmlFor="serverId" className="block text-sm font-medium">Server ID</label>
-        <input
-          id="serverId"
-          type="text"
-          value={formData.serverId}
-          onChange={(e) => handleInputChange('serverId', e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          required
-        />
+        <Label htmlFor="buttonType">Button Type</Label>
+        <Select onValueChange={(value) => handleButtonOptionChange('type', value as ButtonType)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select button type" />
+          </SelectTrigger>
+          <SelectContent>
+            {buttonTypes.map((type) => (
+              <SelectItem key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-
-      {/* Code Field */}
-      <div>
-        <label htmlFor="code" className="block text-sm font-medium">Code</label>
-        <input
-          id="code"
-          type="text"
-          value={formData.code}
-          onChange={(e) => handleInputChange('code', e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          required
-        />
-      </div>
-
-      {/* Dynamic Fields Section */}
-      <div>
-        <h3 className="text-lg font-medium">Fields</h3>
-        {formData.fields.map((field, index) => (
-          <div key={index} className="space-y-2">
-            <div className="flex gap-4">
-              <input
-                type="text"
-                placeholder="Label"
-                value={field.label}
-                onChange={(e) => handleFieldUpdate(index, 'label', e.target.value)}
-                className="block w-1/2 border border-gray-300 rounded-md p-2"
-              />
-              <input
-                type="text"
-                placeholder="Value"
-                value={field.value}
-                onChange={(e) => handleFieldUpdate(index, 'value', e.target.value)}
-                className="block w-1/2 border border-gray-300 rounded-md p-2"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => removeField(index)}
-              className="text-red-600 mt-2"
-            >
-              Remove Field
-            </button>
+      {blinkData.buttonOptions.type !== 'none' && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="amount">Amount</Label>
+            <Input
+              id="amount"
+              type="number"
+              value={blinkData.buttonOptions.amount}
+              onChange={(e) => handleButtonOptionChange('amount', e.target.value)}
+              placeholder="Enter amount"
+            />
           </div>
-        ))}
-        <button
-          type="button"
-          onClick={addField}
-          className="mt-2 bg-gray-950 text-white py-2 px-4 rounded-md"
-        >
-          Add Field
-        </button>
-      </div>
-
-      {/* Form Reset and Submit Section */}
-      <div className="flex gap-4">
-        <button
-          type="button"
-          onClick={resetForm}
-          className="bg-gray-500 text-white py-2 px-4 rounded-md"
-        >
-          Reset Form
-        </button>
-        <button
-          type="button"
-          onClick={resetFields}
-          className="bg-gray-500 text-white py-2 px-4 rounded-md"
-        >
-          Reset Fields
-        </button>
-      </div>
-
-      {/* Displaying Form Data */}
-      <div className="mt-4">
-        <pre className="bg-gray-100 p-4 rounded-md">{JSON.stringify(formData, null, 2)}</pre>
-      </div>
-
-      {/* Submit Button */}
-      <div className="mt-6">
-        <button
-          type="submit"
-          className="w-full bg-gray-950 text-white py-3 rounded-md"
-        >
-          Submit
-        </button>
-      </div>
+          <div>
+            <Label htmlFor="currency">Currency</Label>
+            <Select onValueChange={(value) => handleButtonOptionChange('currency', value as Currency)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                {currencies.map((currency) => (
+                  <SelectItem key={currency} value={currency}>
+                    <div className="flex items-center">
+                      <Image src={currencyIcons[currency] || "/placeholder.svg"} alt={currency} width={24} height={24} className="mr-2" />
+                      {currency}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+      {blinkData.buttonOptions.type !== 'none' && (
+        <div>
+          <Label htmlFor="address">Recipient Address</Label>
+          <Input
+            id="address"
+            value={blinkData.buttonOptions.address}
+            onChange={(e) => handleButtonOptionChange('address', e.target.value)}
+            placeholder="Enter recipient address"
+          />
+        </div>
+      )}
+      <Button type="submit" className="w-full" disabled={!connected || isLoading}>
+        {isLoading ? 'Creating Blink...' : 'Create Blink'}
+      </Button>
     </form>
-  );
-};
+  )
+}
 
-export default BlinkForm;

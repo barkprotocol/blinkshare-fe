@@ -1,60 +1,61 @@
-import { useState } from "react"
-import { Blink, BlinkType } from "@/lib/types/blink"
+import { useState } from 'react';
+
+export type BlinkType = 'Donation' | 'Payment' | 'Gift' | 'Mint NFT' | 'Mint Token';
+export type DonationCurrency = 'SOL' | 'BARK' | 'USDC';
+export type TextPosition = 'left' | 'center' | 'right';
 
 interface BlinkFormData {
-  title: string
-  description: string
-  amount: number
-  currency: "SOL" | "USDC" | "BARK"
-  memo: string
+  title: string;
+  label: string;
+  description: string;
+  image: File | null;
+  textPosition: TextPosition;
+  bgColor: string;
+  donationAmount: string;
+  donationLink: string;
+  donationCurrency: DonationCurrency;
+  blinkType: BlinkType;
 }
 
-export function useBlinkForm(type: BlinkType) {
+export const useBlinkForm = () => {
   const [formData, setFormData] = useState<BlinkFormData>({
-    title: "",
-    description: "",
-    amount: 0,
-    currency: "SOL", // Default currency is SOL
-    memo: "",
-  })
+    title: '',
+    label: '',
+    description: '',
+    image: null,
+    textPosition: 'left',
+    bgColor: '#ffffff',
+    donationAmount: '0.1',
+    donationLink: '',
+    donationCurrency: 'SOL',
+    blinkType: 'Donation',
+  });
 
-  // Update individual fields in the form
-  const updateField = (field: keyof BlinkFormData, value: string) => {
-    if (field === "amount") {
-      // Parse the amount field as a number
-      setFormData((prev) => ({
-        ...prev,
-        [field]: parseFloat(value),
-      }))
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: value }))
-    }
-  }
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { id, value } = e.target;
+    setFormData((prevState) => ({
+      ...prevState,
+      [id]: value,
+    }));
+  };
 
-  // Reset form data to initial values
-  const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      amount: 0,
-      currency: "SOL", // Default currency
-      memo: "",
-    })
-  }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    setFormData((prevState) => ({
+      ...prevState,
+      image: file,
+    }));
+  };
 
-  // Form validation: Ensure all fields are filled and the amount is greater than 0
-  const validateForm = (): boolean => {
-    return (
-      formData.title &&
-      formData.description &&
-      formData.amount > 0
-    )
-  }
+  const handleSelectChange = (field: keyof BlinkFormData) => (value: string) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      [field]: value,
+    }));
+  };
 
-  return {
-    formData,
-    updateField,
-    resetForm,
-    validateForm,
-  }
-}
+  return { formData, setFormData, handleInputChange, handleFileChange, handleSelectChange };
+};
+
