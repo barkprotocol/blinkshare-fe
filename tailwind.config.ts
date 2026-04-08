@@ -93,9 +93,8 @@ const config: Config = {
         '144': '36rem',
       },
       fontFamily: {
-        sans: ['Poppins', 'Arial', 'sans-serif'],
-        title: ['Oswald', 'sans-serif'],
-        body: ['Poppins Light', 'sans-serif'],
+        sans: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-syne)', 'system-ui', 'sans-serif'],
       },
     },
   },

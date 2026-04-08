@@ -1,24 +1,64 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { BlinkDisplay } from "@/components/blink/blink-display";
 import { Button } from "@/components/ui/button";
-import { InfoIcon, Plus, RefreshCw, ImageIcon } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { 
+  Search, 
+  Plus, 
+  RefreshCw, 
+  Sparkles, 
+  TrendingUp, 
+  Clock, 
+  Filter,
+  Grid3X3,
+  List,
+  ChevronDown
+} from 'lucide-react';
+import { FaDiscord } from 'react-icons/fa';
 import OverlaySpinner from "@/components/ui/overlay-spinner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Image from "next/image";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Blink {
   id: string;
   name: string;
   description: string;
+  category?: string;
+  price?: number;
+  trending?: boolean;
+  new?: boolean;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+const categories = [
+  { id: "all", label: "All Categories" },
+  { id: "defi", label: "DeFi" },
+  { id: "nft", label: "NFT" },
+  { id: "gaming", label: "Gaming" },
+  { id: "social", label: "Social" },
+  { id: "utility", label: "Utility" },
+];
+
+const sortOptions = [
+  { id: "trending", label: "Trending", icon: TrendingUp },
+  { id: "newest", label: "Newest", icon: Clock },
+  { id: "popular", label: "Most Popular", icon: Sparkles },
+];
 
 const onConnect = async (owner: boolean) => {
   try {
@@ -51,7 +91,10 @@ const BlinkMarketplaceComponent = () => {
   const [blinks, setBlinks] = useState<Blink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [backgroundImage, setBackgroundImage] = useState<string>("https://ucarecdn.com/92d4d7ea-f9d8-429c-bf68-6f3bc69c1c02/goldenshoppingcart.jpg");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("trending");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const searchParams = useSearchParams();
   const router = useRouter();
   const code = searchParams.get("code") || "";
@@ -92,105 +135,278 @@ const BlinkMarketplaceComponent = () => {
     router.push(`${window.location.pathname}?${params.toString()}`);
   }, [code, router]);
 
-  const handleBackgroundChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBackgroundImage(e.target.value);
-  };
+  const filteredBlinks = useMemo(() => {
+    let result = [...blinks];
+    
+    // Filter by search
+    if (searchQuery) {
+      result = result.filter(
+        blink => 
+          blink.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          blink.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Filter by category
+    if (selectedCategory !== "all") {
+      result = result.filter(blink => blink.category === selectedCategory);
+    }
+    
+    return result;
+  }, [blinks, searchQuery, selectedCategory]);
 
-  if (isLoading) return <OverlaySpinner />;
+  const featuredBlinks = useMemo(() => {
+    return blinks.slice(0, 3);
+  }, [blinks]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pt-24">
+        <div className="container mx-auto px-4">
+          <div className="space-y-8">
+            <Skeleton className="h-12 w-64 mx-auto" />
+            <Skeleton className="h-6 w-96 mx-auto" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-64 rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 text-gray-900">
-      <div className="flex-grow relative">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
-          style={{ backgroundImage: `url('${backgroundImage}')` }}
-          aria-hidden="true"
-        ></div>
-        <section className="py-16 relative">
-          <div className="container mx-auto px-6 sm:px-12 relative z-10 text-center">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-8 mt-16">
-              <span className="font-bold">Blink</span><span className="font-light">Share</span> Marketplace
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-16 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <Badge variant="secondary" className="mb-4">
+              <Sparkles className="h-3 w-3 mr-1" />
+              {blinks.length} Blinks Available
+            </Badge>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-4">
+              <span className="text-gradient">Blink</span>Share Marketplace
             </h1>
-            <p className="text-xl mb-8">Discover {blinks.length} unique blinks</p>
+            <p className="text-lg text-muted-foreground">
+              Discover and collect unique blinks from creators around the world
+            </p>
+          </div>
 
-            <div className="mb-8">
-              <Label htmlFor="backgroundImage" className="flex items-center justify-center mb-2">
-                <ImageIcon className="mr-2" />
-                Change Background Image
-              </Label>
+          {/* Search and Filters */}
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
-                id="backgroundImage"
-                type="url"
-                placeholder="Enter image URL"
-                value={backgroundImage}
-                onChange={handleBackgroundChange}
-                className="max-w-md mx-auto"
+                type="search"
+                placeholder="Search blinks by name or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 h-14 text-lg rounded-xl border-border/50 bg-card/50 backdrop-blur-sm"
               />
-            </div>
-
-            {error && (
-              <Alert variant="destructive" className="mb-8">
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-                <Button onClick={fetchBlinks} variant="outline" className="mt-4">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Retry
-                </Button>
-              </Alert>
-            )}
-
-            {!code && !error && (
-              <div className="flex flex-col sm:flex-row justify-center items-center mb-8 space-y-4 sm:space-y-0 sm:space-x-6">
-                <Alert className="w-full sm:w-2/3 lg:w-1/2 mx-auto text-center bg-white text-gray-900 p-6 rounded-lg shadow-lg">
-                  <div className="flex flex-col items-center">
-                    <AlertTitle className="text-xl font-semibold flex items-center mb-4">
-                      <InfoIcon className="h-8 w-8 mr-3 text-gray-900" />
-                      Discord Connection Required
-                    </AlertTitle>
-                    <AlertDescription className="mt-2 text-base text-gray-600">
-                      BlinkShare requires you to connect your Discord in order to assign you the purchased roles.
-                    </AlertDescription>
-                    <Button
-                      onClick={() => onConnect(false)}
-                      className="mt-6 w-64 py-3 px-6 rounded-md bg-gray-900 hover:bg-gray-800 text-white font-semibold shadow-lg transform transition duration-300 ease-in-out hover:scale-105"
-                    >
-                      <Image
-                        className="mr-3 h-6 w-6"
-                        src="https://ucarecdn.com/0da96123-0acb-43a5-b3d8-571629377d1b/discord.png"
-                        alt="Discord Logo"
-                        width={24}
-                        height={24}
-                      />
-                      Connect Discord
-                    </Button>
-                  </div>
-                </Alert>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {blinks.length > 0 ? (
-                blinks.map((blink) => (
-                  <div key={blink.id} className="mb-8 break-inside-avoid bg-white rounded-lg shadow-lg p-6 transform transition duration-300 hover:scale-105">
-                    <BlinkDisplay serverId={blink.id} code={code} />
-                  </div>
-                ))
-              ) : (
-                <p className="text-2xl text-gray-600 col-span-full">No blinks available at the moment.</p>
-              )}
             </div>
           </div>
 
-          <Button
-            onClick={() => onConnect(true)}
-            className="fixed h-16 w-16 sm:h-auto sm:w-auto bottom-16 right-8 sm:bottom-16 sm:right-12 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-md flex items-center justify-center shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 z-20"
-          >
-            <Plus className="h-7 w-7 sm:mr-2" aria-hidden="true" />
-            <span className="hidden sm:block text-lg">Add a Blink</span>
-            <span className="sr-only">Add a new Blink</span>
-          </Button>
+          {/* Filter Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category.id)}
+                  className="whitespace-nowrap"
+                >
+                  {category.label}
+                </Button>
+              ))}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Sort by
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {sortOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.id}
+                      onClick={() => setSortBy(option.id)}
+                      className={sortBy === option.id ? "bg-muted" : ""}
+                    >
+                      <option.icon className="h-4 w-4 mr-2" />
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <div className="flex border rounded-lg overflow-hidden">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="icon"
+                  className="rounded-none h-9 w-9"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="icon"
+                  className="rounded-none h-9 w-9"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Discord Connection Alert */}
+      {!code && !error && (
+        <section className="container mx-auto px-4 mb-12">
+          <Card className="glass-card border-primary/20 overflow-hidden">
+            <CardContent className="p-0">
+              <div className="flex flex-col md:flex-row items-center gap-6 p-6">
+                <div className="flex-shrink-0">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <FaDiscord className="h-8 w-8 text-primary" />
+                  </div>
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="text-xl font-semibold mb-2">Connect Discord to Purchase</h3>
+                  <p className="text-muted-foreground">
+                    BlinkShare requires Discord connection to assign purchased roles to your account.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => onConnect(false)}
+                  size="lg"
+                  className="bg-[#5865F2] hover:bg-[#4752C4] text-white"
+                >
+                  <Image
+                    src="https://ucarecdn.com/0da96123-0acb-43a5-b3d8-571629377d1b/discord.png"
+                    alt="Discord"
+                    width={20}
+                    height={20}
+                    className="mr-2"
+                  />
+                  Connect Discord
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </section>
-      </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <section className="container mx-auto px-4 mb-12">
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              {error}
+              <Button onClick={fetchBlinks} variant="outline" size="sm">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </section>
+      )}
+
+      {/* Featured Blinks */}
+      {featuredBlinks.length > 0 && (
+        <section className="container mx-auto px-4 mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-display font-bold">Featured Blinks</h2>
+              <p className="text-muted-foreground">Handpicked by our team</p>
+            </div>
+            <Badge variant="outline" className="hidden sm:flex">
+              <TrendingUp className="h-3 w-3 mr-1" />
+              Trending Now
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {featuredBlinks.map((blink) => (
+              <Card key={blink.id} className="glass-card overflow-hidden group hover:border-primary/50 transition-all duration-300 glow">
+                <CardContent className="p-6">
+                  <BlinkDisplay serverId={blink.id} code={code} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* All Blinks */}
+      <section className="container mx-auto px-4 pb-24">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-display font-bold">All Blinks</h2>
+            <p className="text-muted-foreground">{filteredBlinks.length} results</p>
+          </div>
+        </div>
+        
+        {filteredBlinks.length > 0 ? (
+          <div className={
+            viewMode === "grid" 
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              : "space-y-4"
+          }>
+            {filteredBlinks.map((blink) => (
+              <Card 
+                key={blink.id} 
+                className={`glass-card overflow-hidden group hover:border-primary/50 transition-all duration-300 ${
+                  viewMode === "list" ? "flex items-center" : ""
+                }`}
+              >
+                <CardContent className={viewMode === "list" ? "p-4 flex-1" : "p-6"}>
+                  <BlinkDisplay serverId={blink.id} code={code} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="glass-card">
+            <CardContent className="py-16 text-center">
+              <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-xl font-semibold mb-2">No Blinks Found</h3>
+              <p className="text-muted-foreground mb-6">
+                {searchQuery 
+                  ? "Try adjusting your search or filters"
+                  : "Be the first to create a blink!"
+                }
+              </p>
+              <Button onClick={() => onConnect(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create a Blink
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      {/* Floating Add Button */}
+      <Button
+        onClick={() => onConnect(true)}
+        className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-lg glow z-40"
+        size="icon"
+      >
+        <Plus className="h-6 w-6" />
+        <span className="sr-only">Add a new Blink</span>
+      </Button>
     </div>
   );
 };
@@ -202,4 +418,3 @@ export default function BlinkMarketplace() {
     </React.Suspense>
   );
 }
-
