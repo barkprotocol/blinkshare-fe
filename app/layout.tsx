@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href="https://blinkshare.fun" />
       </Head>
-      <body className="bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col min-h-screen">
+      <body className="bg-background text-foreground flex flex-col min-h-screen font-sans">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <WalletProvider>
             <Header />
